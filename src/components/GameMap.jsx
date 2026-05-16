@@ -4,8 +4,16 @@ import { MAP_NODES, ARTIFACTS } from '../data/gameData';
 
 export default function GameMap({ currentTier, currentAct, visitedNodes, onSelectNode, character, playerArtifacts }) {
   const containerRef = useRef(null);
+  const scrollRef = useRef(null);
   const nodeRefs = useRef({});
   const [lines, setLines] = useState([]);
+
+  // Auto-Scroll zur tiefsten ungelösten Ebene (Startpunkt)
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [currentTier, currentAct]);
 
   const getNodeIcon = (type) => {
     switch (type) {
@@ -28,7 +36,6 @@ export default function GameMap({ currentTier, currentAct, visitedNodes, onSelec
     }
   };
 
-  // Visuelle Linien berechnen!
   useEffect(() => {
     const drawLines = () => {
       if (!containerRef.current) return;
@@ -52,7 +59,7 @@ export default function GameMap({ currentTier, currentAct, visitedNodes, onSelec
       });
       setLines(newLines);
     };
-    setTimeout(drawLines, 150); // Kurz warten bis DOM gerendert ist
+    setTimeout(drawLines, 150);
     window.addEventListener('resize', drawLines);
     return () => window.removeEventListener('resize', drawLines);
   }, [currentTier]);
@@ -60,10 +67,10 @@ export default function GameMap({ currentTier, currentAct, visitedNodes, onSelec
   const tiers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
   return (
-    <div className="flex flex-col items-center min-h-[calc(100vh-68px)] bg-slate-900/90 text-white p-4 overflow-y-auto pb-24">
+    <div className="flex flex-col items-center h-[calc(100dvh-68px)] bg-slate-900/90 text-white overflow-hidden">
       
-      {/* Artefakte - FIX: flex-wrap sorgt dafür, dass Popups nicht abgeschnitten werden! */}
-      <div className="w-full max-w-2xl bg-slate-950 border border-slate-800 rounded-xl p-3 mb-6 flex flex-wrap items-center justify-between shadow-lg relative z-50">
+      {/* Artefakte */}
+      <div className="w-full max-w-2xl bg-slate-950 border-b border-slate-800 p-3 flex flex-wrap items-center justify-between shadow-lg relative z-50 shrink-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-slate-500 mr-2 uppercase font-bold">Artefakte:</span>
           {playerArtifacts && playerArtifacts.length > 0 ? (
@@ -71,14 +78,13 @@ export default function GameMap({ currentTier, currentAct, visitedNodes, onSelec
               const artifact = ARTIFACTS[artId];
               if (!artifact) return null;
               return (
-                <div key={`${artId}-${idx}`} className="group relative w-10 h-10 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 hover:bg-slate-700 cursor-pointer">
+                <button type="button" key={`${artId}-${idx}`} className="group relative w-10 h-10 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 hover:bg-slate-700 focus:bg-slate-700 transition cursor-help outline-none">
                   {getArtifactIcon(artifact.iconName)}
-                  {/* Tooltip bricht nun sauber nach unten aus */}
-                  <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 text-xs p-3 rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all w-48 text-center shadow-2xl z-[100]">
+                  <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 text-xs p-3 rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all w-48 text-center shadow-2xl z-[100]">
                     <strong className="text-amber-400 block mb-1 text-sm">{artifact.name}</strong>
                     <span className="text-slate-200">{artifact.desc}</span>
                   </div>
-                </div>
+                </button>
               );
             })
           ) : <span className="text-xs font-mono text-slate-600">Keine</span>}
@@ -89,49 +95,51 @@ export default function GameMap({ currentTier, currentAct, visitedNodes, onSelec
         </div>
       </div>
 
-      {/* Map mit Linien! */}
-      <div ref={containerRef} className="flex-1 w-full max-w-2xl flex flex-col-reverse justify-around items-center relative bg-slate-950/40 rounded-2xl p-4 sm:p-8 border border-slate-800/50 min-h-[800px]">
-        {/* SVG Ebene für die Linien */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
-          {lines.map(line => (
-            <line key={line.id} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="#334155" strokeWidth="3" strokeDasharray="5,5" />
-          ))}
-        </svg>
+      {/* Scrollbarer Map Bereich */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto w-full flex flex-col items-center p-4">
+        <div ref={containerRef} className="w-full max-w-2xl flex flex-col-reverse justify-around items-center relative min-h-[800px]">
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+            {lines.map(line => (
+              <line key={line.id} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="#334155" strokeWidth="3" strokeDasharray="5,5" />
+            ))}
+          </svg>
 
-        {tiers.map((tierIndex) => {
-          const nodesInTier = MAP_NODES.filter(n => n.tier === tierIndex);
-          const isSelectableTier = currentTier === tierIndex;
+          {tiers.map((tierIndex) => {
+            const nodesInTier = MAP_NODES.filter(n => n.tier === tierIndex);
+            const isSelectableTier = currentTier === tierIndex;
 
-          return (
-            <div key={tierIndex} className="w-full flex justify-center gap-8 sm:gap-12 relative py-3 z-10">
-              {nodesInTier.map((node) => {
-                const isVisited = visitedNodes.includes(node.id);
-                let isClickable = isSelectableTier;
-                if (currentTier > 0 && isSelectableTier) {
-                  const lastNode = MAP_NODES.find(n => n.id === visitedNodes[visitedNodes.length - 1]);
-                  isClickable = lastNode ? lastNode.connectedTo.includes(node.id) : true;
-                }
+            return (
+              <div key={tierIndex} className="w-full flex justify-center gap-8 sm:gap-12 relative py-4 z-10">
+                {nodesInTier.map((node) => {
+                  const isVisited = visitedNodes.includes(node.id);
+                  let isClickable = isSelectableTier;
+                  if (currentTier > 0 && isSelectableTier) {
+                    const lastNode = MAP_NODES.find(n => n.id === visitedNodes[visitedNodes.length - 1]);
+                    isClickable = lastNode ? lastNode.connectedTo.includes(node.id) : true;
+                  }
 
-                return (
-                  <button
-                    ref={el => nodeRefs.current[node.id] = el}
-                    key={node.id}
-                    disabled={!isClickable || isVisited}
-                    onClick={() => onSelectNode(node)}
-                    className={`group relative w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 min-h-[44px] min-w-[44px] outline-none ${
-                      isVisited ? 'border-slate-800 bg-slate-900 opacity-30' : isClickable ? 'border-amber-500 bg-slate-900 shadow-[0_0_15px_rgba(245,158,11,0.5)] hover:scale-110 cursor-pointer animate-pulse z-20' : 'border-slate-800 bg-slate-950/60 opacity-40'
-                    }`}
-                  >
-                    {getNodeIcon(node.type)}
-                    <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 text-[10px] px-2 py-1 rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap shadow-xl text-slate-200 z-[100]">
-                      {node.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
+                  return (
+                    <button
+                      type="button"
+                      ref={el => nodeRefs.current[node.id] = el}
+                      key={node.id}
+                      disabled={!isClickable || isVisited}
+                      onClick={() => onSelectNode(node)}
+                      className={`group relative w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 min-h-[44px] min-w-[44px] outline-none ${
+                        isVisited ? 'border-slate-800 bg-slate-900 opacity-30' : isClickable ? 'border-amber-500 bg-slate-900 shadow-[0_0_15px_rgba(245,158,11,0.5)] hover:scale-110 focus:scale-110 cursor-pointer animate-pulse z-20' : 'border-slate-800 bg-slate-950/60 opacity-40'
+                      }`}
+                    >
+                      {getNodeIcon(node.type)}
+                      <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 text-[10px] px-2 py-1 rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all whitespace-nowrap shadow-xl text-slate-200 z-[100]">
+                        {node.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
