@@ -5,7 +5,7 @@ export const CHARACTERS = [
     title: 'Der Abenteurer',
     unlocked: true,
     unlockCondition: 'Von Anfang an freigeschaltet',
-    ascensionLevel: 0, // Neues Meta-Progressions-System
+    ascensionLevel: 0,
     hp: 80,
     maxHp: 80,
     energy: 3,
@@ -40,11 +40,12 @@ export const CHARACTERS = [
 ];
 
 export const ARTIFACTS = {
-  stone_fox_idol: { id: 'stone_fox_idol', name: 'Steinerner Fuchsschrein', desc: 'Jeder Kampf startet mit 1 zusätzlichem Energie.', effect: { type: 'energy', value: 1 } },
-  shadow_charm: { id: 'shadow_charm', name: 'Schattenamulett', desc: 'Gegner starten jeden Kampf mit 2 Schwäche.', effect: { type: 'enemy_weak', value: 2 } },
-  lava_scale: { id: 'lava_scale', name: 'Lavaschuppe', desc: 'Zu Beginn des Zuges erhält ein zufälliger Gegner 2 Brand.', effect: { type: 'turn_start_burn', value: 2 } },
-  cyber_core: { id: 'cyber_core', name: 'Kybernetischer Kern', desc: 'Zu Beginn des Zuges wird 1 zusätzliche Karte gezogen.', effect: { type: 'draw', value: 1 } },
-  sacred_flame: { id: 'sacred_flame', name: 'Heilige Flamme', desc: 'Angriffskarten verursachen +2 Brandschaden.', effect: { type: 'burn_bonus', value: 2 } }
+  stone_fox_idol: { id: 'stone_fox_idol', name: 'Steinerner Fuchsschrein', desc: 'Jeder Kampf startet mit 1 zusätzlichem Energie.', iconName: 'Zap', effect: { type: 'energy', value: 1 } },
+  shadow_charm: { id: 'shadow_charm', name: 'Schattenamulett', desc: 'Gegner starten jeden Kampf mit 2 Schwäche.', iconName: 'Moon', effect: { type: 'enemy_weak', value: 2 } },
+  lava_scale: { id: 'lava_scale', name: 'Lavaschuppe', desc: 'Zu Beginn des Zuges erhält ein zufälliger Gegner 2 Brand.', iconName: 'Flame', effect: { type: 'turn_start_burn', value: 2 } },
+  cyber_core: { id: 'cyber_core', name: 'Kybernetischer Kern', desc: 'Zu Beginn des Zuges wird 1 zusätzliche Karte gezogen.', iconName: 'Cpu', effect: { type: 'draw', value: 1 } },
+  sacred_flame: { id: 'sacred_flame', name: 'Heilige Flamme', desc: 'Angriffskarten verursachen +2 Brandschaden.', iconName: 'Sun', effect: { type: 'burn_bonus', value: 2 } },
+  golden_acorn: { id: 'golden_acorn', name: 'Goldene Eichel', desc: 'Erhöht das gefundene Gold um 20%.', iconName: 'Coins', effect: { type: 'gold_bonus', value: 1.2 } }
 };
 
 export const CARDS = {
@@ -56,63 +57,65 @@ export const CARDS = {
 };
 
 export const ENEMIES = [
-  { id: 'slime', name: 'Wald-Schleim', hp: 32, type: 'Normal', intentValue: 6, sprite: '🧪' },
-  { id: 'goblin', name: 'Diebischer Kobold', hp: 45, type: 'Normal', intentValue: 5, sprite: '👺' },
-  { id: 'wolf', name: 'Schattenwolf', hp: 58, type: 'Elite', intentValue: 12, sprite: '🐺' },
-  { id: 'golem', name: 'Uralter Steingolem', hp: 120, type: 'Boss', intentValue: 15, sprite: '🗿' }
+  // AKT 1
+  { id: 'slime', act: 1, type: 'Normal', name: 'Wald-Schleim', hp: 32, intentValue: 6, sprite: '🧪', behavior: 'Teilt konstanten Schaden aus.' },
+  { id: 'bat', act: 1, type: 'Normal', name: 'Giftfledermaus', hp: 24, intentValue: 4, poison: 2, sprite: '🦇', behavior: 'Vergiftet bei jedem Treffer.' },
+  { id: 'goblin', act: 1, type: 'Normal', name: 'Diebischer Kobold', hp: 45, intentValue: 5, block: 4, sprite: '👺', behavior: 'Baut regelmäßig Schilde auf.' },
+  { id: 'wolf', act: 1, type: 'Elite', name: 'Schattenwolf', hp: 65, intentValue: 12, sprite: '🐺', behavior: 'Aggressive, schwere Angriffe.' },
+  // AKT 1 BOSSE
+  { id: 'boss_golem', act: 1, type: 'Boss', name: 'Uralter Steingolem', hp: 130, intentValue: 15, sprite: '🗿', behavior: 'Viel Leben, langsame aber vernichtende Schläge.' },
+  { id: 'boss_spider', act: 1, type: 'Boss', name: 'Weberin der Tiefen', hp: 105, intentValue: 9, summon: true, sprite: '🕷️', behavior: 'Beschwört jede Runde kleine Spinnen.' },
+  { id: 'boss_shaman', act: 1, type: 'Boss', name: 'Verdorbener Schamane', hp: 115, intentValue: 10, curse: true, sprite: '🔮', behavior: 'Verflucht das Deck und nutzt Magie.' },
+
+  // AKT 2
+  { id: 'cultist', act: 2, type: 'Normal', name: 'Krähen-Kultist', hp: 55, intentValue: 8, sprite: '🐦‍⬛', behavior: 'Bufft sich jede Runde.' },
+  { id: 'mimic', act: 2, type: 'Normal', name: 'Gieriger Mimic', hp: 60, intentValue: 10, sprite: '📦', behavior: 'Teilt harten Schaden aus, gibt extra Gold.' },
+  { id: 'knight', act: 2, type: 'Elite', name: 'Verfluchter Ritter', hp: 100, intentValue: 14, block: 10, sprite: '🛡️', behavior: 'Starke Rüstung, kontert Angriffe.' },
+  // AKT 2 BOSSE
+  { id: 'boss_dragon', act: 2, type: 'Boss', name: 'Junger Aschendrache', hp: 200, intentValue: 18, burn: 3, sprite: '🐉', behavior: 'Setzt den Spieler in Brand.' },
+  { id: 'boss_collector', act: 2, type: 'Boss', name: 'Der Sammler', hp: 180, intentValue: 15, sprite: '🎭', behavior: 'Stiehlt Karten aus dem Deck.' },
+  { id: 'boss_hive', act: 2, type: 'Boss', name: 'Zorniger Schwarm', hp: 160, intentValue: 6, multiAttack: 3, sprite: '🐝', behavior: 'Greift mehrfach pro Runde an.' },
+
+  // AKT 3
+  { id: 'void_walker', act: 3, type: 'Normal', name: 'Leerenwandler', hp: 80, intentValue: 15, sprite: '🌌', behavior: 'Ignoriert teilweise Block.' },
+  { id: 'behemoth', act: 3, type: 'Elite', name: 'Magma-Behemoth', hp: 150, intentValue: 22, sprite: '🌋', behavior: 'Steigert seinen Schaden kontinuierlich.' },
+  // AKT 3 BOSSE
+  { id: 'boss_time', act: 3, type: 'Boss', name: 'Zeitfresser', hp: 350, intentValue: 25, sprite: '⏳', behavior: 'Bestraft das Ausspielen von zu vielen Karten.' },
+  { id: 'boss_awakened', act: 3, type: 'Boss', name: 'Die erwachte Krähe', hp: 300, intentValue: 20, sprite: '🦅', behavior: 'Heilt sich, wenn Fähigkeiten genutzt werden.' },
+  { id: 'boss_heart', act: 3, type: 'Boss', name: 'Herz des Waldes', hp: 400, intentValue: 30, sprite: '❤️‍🔥', behavior: 'Der ultimative Test.' }
 ];
 
-// 10 Ebenen (Tiers 0 bis 9). Sauber verknüpft, um Sackgassen zu vermeiden.
 export const MAP_NODES = [
-  // Tier 0
   { id: 1, type: 'Kampf', label: 'Vergessener Pfad', tier: 0, connectedTo: [5, 6] },
   { id: 2, type: 'Kampf', label: 'Einsames Dickicht', tier: 0, connectedTo: [6, 7] },
   { id: 3, type: 'Kampf', label: 'Alte Ruine', tier: 0, connectedTo: [7, 8] },
   { id: 4, type: 'Kampf', label: 'Finsterer Fels', tier: 0, connectedTo: [8] },
-  
-  // Tier 1
   { id: 5, type: 'Kampf', label: 'Ruinen-Lichtung', tier: 1, connectedTo: [9, 10] },
   { id: 6, type: 'Ereignis', label: 'Mysteriöser Schrein', tier: 1, connectedTo: [10, 11] },
   { id: 7, type: 'Lagerfeuer', label: 'Sichere Lichtung', tier: 1, connectedTo: [11, 12] },
   { id: 8, type: 'Kampf', label: 'Schlucht-Eingang', tier: 1, connectedTo: [12] },
-  
-  // Tier 2
   { id: 9, type: 'Schatztruhe', label: 'Gefundener Schatz', tier: 2, connectedTo: [13] },
-  { id: 10, type: 'Elite', label: 'Revier des Schattenwolfs', tier: 2, connectedTo: [13, 14] },
-  { id: 11, type: 'Shop', label: 'Fuchshändler-Wagen', tier: 2, connectedTo: [14, 15] },
+  { id: 10, type: 'Elite', label: 'Revier des Feindes', tier: 2, connectedTo: [13, 14] },
+  { id: 11, type: 'Shop', label: 'Händler-Wagen', tier: 2, connectedTo: [14, 15] },
   { id: 12, type: 'Kampf', label: 'Steinerne Brücke', tier: 2, connectedTo: [15, 16] },
-  
-  // Tier 3
   { id: 13, type: 'Ereignis', label: 'Verlorene Erinnerung', tier: 3, connectedTo: [17, 18] },
   { id: 14, type: 'Lagerfeuer', label: 'Geheimnisvoller Fuchsbau', tier: 3, connectedTo: [18] },
   { id: 15, type: 'Kampf', label: 'Ruinen-Marktplatz', tier: 3, connectedTo: [18, 19] },
   { id: 16, type: 'Elite', label: 'Groll der Golems', tier: 3, connectedTo: [19] },
-  
-  // Tier 4
   { id: 17, type: 'Schatztruhe', label: 'Gefallene Beute', tier: 4, connectedTo: [20, 21] },
   { id: 18, type: 'Shop', label: 'Uralter Schrein', tier: 4, connectedTo: [21, 22] },
   { id: 19, type: 'Kampf', label: 'Ruinen-Thron', tier: 4, connectedTo: [22, 23] },
-  
-  // Tier 5
-  { id: 20, type: 'Elite', label: 'Schattenwolf-Alphatier', tier: 5, connectedTo: [24] },
+  { id: 20, type: 'Elite', label: 'Gefährliche Klippe', tier: 5, connectedTo: [24] },
   { id: 21, type: 'Kampf', label: 'Verborgene Klippe', tier: 5, connectedTo: [24, 25] },
   { id: 22, type: 'Ereignis', label: 'Die große Wahl', tier: 5, connectedTo: [25, 26] },
   { id: 23, type: 'Lagerfeuer', label: 'Sichere Höhle', tier: 5, connectedTo: [26] },
-
-  // Tier 6
   { id: 24, type: 'Kampf', label: 'Tiefes Tal', tier: 6, connectedTo: [27, 28] },
   { id: 25, type: 'Schatztruhe', label: 'Vergrabene Truhe', tier: 6, connectedTo: [28] },
   { id: 26, type: 'Kampf', label: 'Nebelpfad', tier: 6, connectedTo: [28, 29] },
-
-  // Tier 7
   { id: 27, type: 'Ereignis', label: 'Geflüster im Wind', tier: 7, connectedTo: [30] },
   { id: 28, type: 'Elite', label: 'Wächter des Passes', tier: 7, connectedTo: [30, 31] },
   { id: 29, type: 'Shop', label: 'Händler im Nebel', tier: 7, connectedTo: [31] },
-
-  // Tier 8
   { id: 30, type: 'Lagerfeuer', label: 'Letzte Rast vor dem Boss', tier: 8, connectedTo: [32] },
   { id: 31, type: 'Lagerfeuer', label: 'Letzte Rast vor dem Boss', tier: 8, connectedTo: [32] },
-
-  // Tier 9 (Boss - Ebene 10)
-  { id: 32, type: 'Boss', label: 'Gebiets-Boss', tier: 9, connectedTo: [] }
+  { id: 32, type: 'Boss', label: 'Akt-Boss', tier: 9, connectedTo: [] }
 ];
