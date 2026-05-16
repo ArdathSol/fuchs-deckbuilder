@@ -3,26 +3,41 @@ export const CHARACTERS = [
     id: 'normal', name: 'Normaler Fuchs', title: 'Der Abenteurer', unlocked: true, unlockCondition: 'Von Anfang an freigeschaltet', ascensionLevel: 0, hp: 80, maxHp: 80, energy: 3, maxEnergy: 3, color: 'from-orange-500 to-amber-600', borderColor: 'border-orange-500', bgLight: 'bg-orange-950/40', textColor: 'text-orange-400', description: 'Ein ausgeglichener Fuchs, der auf solide Angriffe und zuverlässige Verteidigung setzt.', ability: { name: 'Fuchsschwanz-Konter', desc: 'Jedes Mal, wenn Block verloren wird, füge dem Angreifer 2 Schaden zu.' }, startingDeck: ['strike', 'strike', 'strike', 'defend', 'defend', 'tail_swipe']
   },
   {
-    id: 'fire', name: 'Feuer-Fuchs', title: 'Die lebende Flamme', unlocked: false, unlockCondition: 'Gewinne 1 Run mit dem Normalen Fuchs', ascensionLevel: 0, hp: 70, maxHp: 70, energy: 3, maxEnergy: 3, color: 'from-red-600 to-orange-600', borderColor: 'border-red-500', bgLight: 'bg-red-950/40', textColor: 'text-red-400', description: 'Verbrennt die Gegner mit kontinuierlichem Brandschaden (Burn).', ability: { name: 'Hitzewelle', desc: 'Füge zu Beginn jedes Kampfes allen Gegnern 3 Brand zu.' }, startingDeck: ['strike', 'strike', 'ember', 'defend', 'defend', 'pyro_blast']
+    id: 'fire', name: 'Feuer-Fuchs', title: 'Die lebende Flamme', unlocked: false, unlockCondition: 'Gewinne 1 Run mit dem Normalen Fuchs', ascensionLevel: 0, hp: 70, maxHp: 70, energy: 3, maxEnergy: 3, color: 'from-red-600 to-orange-600', borderColor: 'border-red-500', bgLight: 'bg-red-950/40', textColor: 'text-red-400', description: 'Verbrennt die Gegner mit kontinuierlichem Brandschaden.', ability: { name: 'Hitzewelle', desc: 'Füge zu Beginn jedes Kampfes allen Gegnern 3 Brand zu.' }, startingDeck: ['strike', 'strike', 'ember', 'defend', 'defend', 'pyro_blast']
   }
 ];
 
 export const ARTIFACTS = {
-  stone_fox_idol: { id: 'stone_fox_idol', name: 'Steinerner Fuchsschrein', desc: 'Jeder Kampf startet mit 1 zusätzlichem Energie (+1 Mana dauerhaft in jedem Zug).', iconName: 'Zap', effect: { type: 'energy', value: 1 } },
-  shadow_charm: { id: 'shadow_charm', name: 'Schattenamulett', desc: 'Gegner starten jeden Kampf mit 2 Schwäche.', iconName: 'Moon', effect: { type: 'enemy_weak', value: 2 } },
-  lava_scale: { id: 'lava_scale', name: 'Lavaschuppe', desc: 'Zu Beginn des Zuges erhält ein zufälliger Gegner 2 Brand.', iconName: 'Flame', effect: { type: 'turn_start_burn', value: 2 } },
-  cyber_core: { id: 'cyber_core', name: 'Kybernetischer Kern', desc: 'Du ziehst jede Runde 1 Karte extra.', iconName: 'Cpu', effect: { type: 'draw', value: 1 } },
+  // Normale Artefakte (15)
+  stone_fox_idol: { id: 'stone_fox_idol', name: 'Steinerner Schrein', desc: '+1 Energie in jedem Zug.', iconName: 'Zap', effect: { type: 'energy', value: 1 } },
+  cyber_core: { id: 'cyber_core', name: 'Kybernetischer Kern', desc: 'Jede Runde wird 1 zusätzliche Karte gezogen.', iconName: 'Cpu', effect: { type: 'draw', value: 1 } },
   sacred_flame: { id: 'sacred_flame', name: 'Heilige Flamme', desc: 'Angriffskarten verursachen +2 Brandschaden.', iconName: 'Sun', effect: { type: 'burn_bonus', value: 2 } },
-  golden_acorn: { id: 'golden_acorn', name: 'Goldene Eichel', desc: 'Du startest sofort mit 100 Bonus-Gold.', iconName: 'Coins', effect: { type: 'gold_instant', value: 100 } },
+  golden_acorn: { id: 'golden_acorn', name: 'Goldene Eichel', desc: 'Belohnungen bringen mehr Gold.', iconName: 'Coins', effect: { type: 'gold_bonus', value: 1.2 } },
+  rusty_sword: { id: 'rusty_sword', name: 'Rostiges Schwert', desc: 'Jeder Angriff verursacht +2 Schaden.', iconName: 'Swords', effect: { type: 'attack_bonus', value: 2 } },
+  thick_fur: { id: 'thick_fur', name: 'Dickes Fell', desc: 'Gibt zu Beginn jedes Zuges +3 Block.', iconName: 'Shield', effect: { type: 'turn_block', value: 3 } },
+  vampire_fang: { id: 'vampire_fang', name: 'Vampirzahn', desc: 'Heilt 2 HP nach jedem gewonnenen Kampf.', iconName: 'Heart', effect: { type: 'heal_combat', value: 2 } },
+  swift_boots: { id: 'swift_boots', name: 'Flinke Stiefel', desc: 'Im allerersten Zug eines Kampfes gibt es +2 Energie.', iconName: 'Zap', effect: { type: 'first_turn_energy', value: 2 } },
+  ancient_coin: { id: 'ancient_coin', name: 'Uralte Münze', desc: 'Alle Karten im Shop sind billiger.', iconName: 'Coins', effect: { type: 'discount', value: 0.8 } },
+  toxic_gland: { id: 'toxic_gland', name: 'Giftsekret', desc: 'Jeder Angriff vergiftet den Gegner (1 Gift).', iconName: 'Moon', effect: { type: 'poison_attacks', value: 1 } },
+  regeneration_ring: { id: 'regeneration_ring', name: 'Regenerationsring', desc: 'Heilt 1 HP zu Beginn jedes eigenen Zuges.', iconName: 'Heart', effect: { type: 'turn_heal', value: 1 } },
+  iron_tail: { id: 'iron_tail', name: 'Eisenschweif', desc: 'Schwanz-Angriffe machen +4 Schaden.', iconName: 'Swords', effect: { type: 'tail_bonus', value: 4 } },
+  magic_pouch: { id: 'magic_pouch', name: 'Magischer Beutel', desc: 'Man startet jeden Kampf mit 10 Rüstung.', iconName: 'Package', effect: { type: 'start_block', value: 10 } },
+  lava_scale: { id: 'lava_scale', name: 'Lavaschuppe', desc: 'Gegner erhalten jede Runde 2 Brand.', iconName: 'Flame', effect: { type: 'turn_start_burn', value: 2 } },
+  shadow_charm: { id: 'shadow_charm', name: 'Schattenamulett', desc: 'Gegner starten Kämpfe mit Schwäche.', iconName: 'Eye', effect: { type: 'enemy_weak', value: 2 } },
+  
+  // Boss Artefakte (6)
   boss_energy_core: { id: 'boss_energy_core', name: 'Leuchtender Golem-Kern', desc: '+1 Basis-Energie für den Rest des Runs!', iconName: 'Zap', isBoss: true, effect: { type: 'base_energy_up', value: 1 } },
-  boss_dragon_scale: { id: 'boss_dragon_scale', name: 'Drachenschuppe', desc: 'Startet JEDEN Kampf sofort mit 12 Block.', iconName: 'Shield', isBoss: true, effect: { type: 'start_block', value: 12 } }
+  boss_dragon_scale: { id: 'boss_dragon_scale', name: 'Drachenschuppe', desc: 'Startet JEDEN Kampf sofort mit 15 Block.', iconName: 'Shield', isBoss: true, effect: { type: 'start_block', value: 15 } },
+  boss_heart_fragment: { id: 'boss_heart_fragment', name: 'Herzfragment', desc: 'Erhöht die maximalen HP sofort um 20.', iconName: 'Heart', isBoss: true, effect: { type: 'max_hp_up', value: 20 } },
+  boss_cursed_bell: { id: 'boss_cursed_bell', name: 'Verfluchte Glocke', desc: '+2 Karten pro Zug, aber Gegner machen +2 Schaden.', iconName: 'Eye', isBoss: true, effect: { type: 'double_edged', value: 1 } },
+  boss_void_cloak: { id: 'boss_void_cloak', name: 'Leerenumhang', desc: 'Vollständige Heilung nach Bosskämpfen.', iconName: 'Moon', isBoss: true, effect: { type: 'boss_heal', value: 1 } },
+  boss_golden_crown: { id: 'boss_golden_crown', name: 'Goldene Krone', desc: 'Man startet Kämpfe mit doppelter Energie, danach normal.', iconName: 'Sun', isBoss: true, effect: { type: 'burst_start', value: 1 } }
 };
 
 export const EVENTS = [
-  { title: 'Die verfluchte Klinge', text: 'Vor dir im Dreck steckt ein schwarz leuchtendes Schwert. Es flüstert deinen Namen und verlangt Blut.', options: [ { text: 'Blut opfern (-15 HP, Erhalte "Schwanzfeger" Karte)', action: (state) => { state.hurt(15); state.addCard('tail_swipe'); } }, { text: 'Ignorieren', action: () => {} } ] },
-  { title: 'Der verrückte Bettler', text: 'Ein zerlumpter Fuchs hält dir die Hand hin. "Gib mir Gold, und das Schicksal wird dir lächeln!"', options: [ { text: '50 Gold geben (Erhalte zufälliges Artefakt)', action: (state) => { if(state.gold >= 50) { state.spend(50); state.giveRandomArtifact(); } } }, { text: 'Wegtreten (-5 HP aus Scham)', action: (state) => state.hurt(5) } ] },
-  { title: 'Giftige Sporen', text: 'Du betrittst ein Feld mit purpurnen Pilzen. Sie platzen auf und versprühen giftigen Staub!', options: [ { text: 'Durchrennen (-10 HP)', action: (state) => state.hurt(10) }, { text: 'Vorsichtig atmen (Verliere 30 Gold, kein HP-Verlust)', action: (state) => state.spend(30) } ] },
-  { title: 'Vergessener Schrein', text: 'Ein leuchtender Schrein. Er ist uralt.', options: [ { text: 'Beten (Heile 30 HP)', action: (state) => state.heal(30) }, { text: 'Plündern (+80 Gold, 50% Chance auf -10 HP)', action: (state) => { state.gainGold(80); if(Math.random() < 0.5) state.hurt(10); } } ] }
+  { title: 'Die verfluchte Klinge', text: 'Ein schwarz leuchtendes Schwert verlangt nach Blut.', options: [ { text: 'Blut opfern (-15 HP, Erhalte mächtige Karte)', action: (api) => { api.hurt(15); api.addCard('tail_swipe'); } }, { text: 'Ignorieren', action: () => {} } ] },
+  { title: 'Der verrückte Bettler', text: '"Gib mir Gold, und das Schicksal wird lächeln!"', options: [ { text: '50 Gold geben (Zufälliges Artefakt)', action: (api) => { if(api.gold >= 50) { api.spend(50); api.giveRandomArtifact(); } } }, { text: 'Wegtreten (-5 HP)', action: (api) => api.hurt(5) } ] },
+  { title: 'Vergessener Schrein', text: 'Ein uralter, leuchtender Schrein.', options: [ { text: 'Beten (Heile 30 HP)', action: (api) => api.heal(30) }, { text: 'Plündern (+80 Gold, 50% Chance auf -10 HP)', action: (api) => { api.gainGold(80); if(Math.random() < 0.5) api.hurt(10); } } ] }
 ];
 
 export const CARDS = {
@@ -38,7 +53,16 @@ export const ENEMIES = [
   { id: 'goblin', act: 1, type: 'Normal', name: 'Kobold', hp: 45, intentValue: 5, sprite: '👺' },
   { id: 'wolf', act: 1, type: 'Elite', name: 'Schattenwolf', hp: 65, intentValue: 12, sprite: '🐺' },
   { id: 'boss_golem', act: 1, type: 'Boss', name: 'Uralter Steingolem', hp: 130, intentValue: 15, sprite: '🗿' },
-  { id: 'boss_spider', act: 1, type: 'Boss', name: 'Weberin', hp: 105, intentValue: 12, sprite: '🕷️' }
+  { id: 'boss_spider', act: 1, type: 'Boss', name: 'Weberin', hp: 105, intentValue: 12, sprite: '🕷️' },
+  
+  { id: 'cultist', act: 2, type: 'Normal', name: 'Krähen-Kultist', hp: 55, intentValue: 8, sprite: '🐦‍⬛' },
+  { id: 'mimic', act: 2, type: 'Normal', name: 'Gieriger Mimic', hp: 60, intentValue: 10, sprite: '📦' },
+  { id: 'knight', act: 2, type: 'Elite', name: 'Verfluchter Ritter', hp: 100, intentValue: 14, sprite: '🛡️' },
+  { id: 'boss_dragon', act: 2, type: 'Boss', name: 'Junger Aschendrache', hp: 200, intentValue: 18, sprite: '🐉' },
+  
+  { id: 'void_walker', act: 3, type: 'Normal', name: 'Leerenwandler', hp: 80, intentValue: 15, sprite: '🌌' },
+  { id: 'behemoth', act: 3, type: 'Elite', name: 'Magma-Behemoth', hp: 150, intentValue: 22, sprite: '🌋' },
+  { id: 'boss_time', act: 3, type: 'Boss', name: 'Zeitfresser', hp: 350, intentValue: 25, sprite: '⏳' }
 ];
 
 export const MAP_NODES = [
