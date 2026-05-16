@@ -40,12 +40,20 @@ export const CHARACTERS = [
 ];
 
 export const ARTIFACTS = {
+  // Normale Artefakte (Pool für Startbonus, Truhen, Elite)
   stone_fox_idol: { id: 'stone_fox_idol', name: 'Steinerner Fuchsschrein', desc: 'Jeder Kampf startet mit 1 zusätzlichem Energie.', iconName: 'Zap', effect: { type: 'energy', value: 1 } },
   shadow_charm: { id: 'shadow_charm', name: 'Schattenamulett', desc: 'Gegner starten jeden Kampf mit 2 Schwäche.', iconName: 'Moon', effect: { type: 'enemy_weak', value: 2 } },
   lava_scale: { id: 'lava_scale', name: 'Lavaschuppe', desc: 'Zu Beginn des Zuges erhält ein zufälliger Gegner 2 Brand.', iconName: 'Flame', effect: { type: 'turn_start_burn', value: 2 } },
   cyber_core: { id: 'cyber_core', name: 'Kybernetischer Kern', desc: 'Zu Beginn des Zuges wird 1 zusätzliche Karte gezogen.', iconName: 'Cpu', effect: { type: 'draw', value: 1 } },
   sacred_flame: { id: 'sacred_flame', name: 'Heilige Flamme', desc: 'Angriffskarten verursachen +2 Brandschaden.', iconName: 'Sun', effect: { type: 'burn_bonus', value: 2 } },
-  golden_acorn: { id: 'golden_acorn', name: 'Goldene Eichel', desc: 'Erhöht das gefundene Gold um 20%.', iconName: 'Coins', effect: { type: 'gold_bonus', value: 1.2 } }
+  golden_acorn: { id: 'golden_acorn', name: 'Goldene Eichel', desc: 'Erhöht das gefundene Gold um 20%.', iconName: 'Coins', effect: { type: 'gold_bonus', value: 1.2 } },
+  
+  // Boss Artefakte (Droppen NUR nach Akt-Bossen)
+  boss_energy_core: { id: 'boss_energy_core', name: 'Leuchtender Golem-Kern', desc: '+1 Energie pro Zug, aber maximales Leben wird um 15 reduziert.', iconName: 'Zap', isBoss: true, effect: { type: 'energy_max_hp_down', value: 1 } },
+  boss_spider_eye: { id: 'boss_spider_eye', name: 'Auge der Weberin', desc: 'Jede 3. ausgespielte Karte heilt dich um 2 HP.', iconName: 'Eye', isBoss: true, effect: { type: 'heal_on_play', value: 2 } },
+  boss_dragon_scale: { id: 'boss_dragon_scale', name: 'Drachenschuppe', desc: 'Startet JEDEN Kampf sofort mit 12 Block.', iconName: 'Shield', isBoss: true, effect: { type: 'start_block', value: 12 } },
+  boss_heart_fragment: { id: 'boss_heart_fragment', name: 'Herzfragment', desc: 'Heilt 20% der maximalen HP am Ende jedes Kampfes.', iconName: 'Heart', isBoss: true, effect: { type: 'heal_after_combat', value: 0.2 } },
+  boss_void_cloak: { id: 'boss_void_cloak', name: 'Leerenumhang', desc: 'Immun gegen den allerersten erlittenen Schaden pro Kampf.', iconName: 'Package', isBoss: true, effect: { type: 'immune_first_hit', value: 1 } }
 };
 
 export const CARDS = {
