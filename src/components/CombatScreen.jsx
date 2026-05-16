@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Sparkles, Swords, RefreshCw, Zap, Award } from 'lucide-react';
-import { CARDS, ARTIFACTS } from '../data/gameData';
-import { playClick, playHit } from '../utils/audio'; // Sound importieren
+import { CARDS } from '../data/gameData';
+import { playClick, playHit } from '../utils/audio';
 
-export default function CombatScreen({ character, enemy, onCombatWin, onCombatLose, playerArtifacts }) {
+export default function CombatScreen({ character, enemy, onCombatWin, onCombatLose, playerArtifacts, playSound }) {
   const [playerHp, setPlayerHp] = useState(character.currentHp);
   const [playerBlock, setPlayerBlock] = useState(0);
   
-  // Artefakt-Logik: Energie-Bonus berechnen!
   const hasEnergyRelic = playerArtifacts?.includes('stone_fox_idol') || playerArtifacts?.includes('boss_energy_core');
   const baseEnergy = hasEnergyRelic ? character.maxEnergy + 1 : character.maxEnergy;
   const [playerEnergy, setPlayerEnergy] = useState(baseEnergy);
@@ -21,39 +19,48 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
   const [hand, setHand] = useState([]);
   const [discard, setDiscard] = useState([]);
   
-  const [log, setLog] = useState([`Kampf gegen ${enemy.name} beginnt!`]);
   const [foxAnimate, setFoxAnimate] = useState('');
   const [enemyAnimate, setEnemyAnimate] = useState('');
 
-  useEffect(() => {
-    // Start-Artefakte anwenden
-    if (playerArtifacts?.includes('boss_dragon_scale')) setPlayerBlock(12);
-    if (playerArtifacts?.includes('shadow_charm')) { /* Gegner-Schwäche simulieren */ }
+  // Dynamischer Hintergrund basierend auf dem aktuellen Akt
+  const getBgStyle = (act) => {
+    switch (act) {
+      case 1: return 'bg-gradient-to-b from-emerald-950 to-slate-950';
+      case 2: return 'bg-gradient-to-b from-indigo-950 to-slate-950';
+      case 3: return 'bg-gradient-to-b from-red-950 to-slate-950';
+      default: return 'bg-slate-950';
+    }
+  };
 
-    const fullDeck = character.startingDeck.map((card, index) => ({ ...CARDS[card], uniqId: `battle-${index}` }));
-    const shuffled = [...fullDeck].sort(() => Math.random() - 0.5);
+  useEffect(() => {
+    if (playerArtifacts?.includes('boss_dragon_scale')) setPlayerBlock(12);
+
+    // Deck sicher laden (egal ob IDs oder fertige Objekte übergeben werden)
+    const fullDeck = character.startingDeck.map((card, index) => {
+      const cardObj = typeof card === 'string' ? CARDS[card] : card;
+      return { ...cardObj, uniqId: `battle-${index}-${Date.now()}` };
+    });
     
-    // Artefakt-Logik: Extra Karten ziehen?
+    const shuffled = [...fullDeck].sort(() => Math.random() - 0.5);
     const startDraw = playerArtifacts?.includes('cyber_core') ? 5 : 4;
     
     setHand(shuffled.slice(0, startDraw));
     setDeck(shuffled.slice(startDraw));
     setDiscard([]);
-  }, [character, enemy]);
-
-  const addLog = (msg) => setLog(prev => [...prev.slice(-4), msg]);
+  }, [character, enemy, playerArtifacts]);
 
   const startPlayerTurn = (currentDiscard, currentDeck) => {
-    setPlayerEnergy(baseEnergy); // Nutzt berechnete Artefakt-Energie
+    if (playerHp <= 0) return; // Keine Züge, falls bereits besiegt
+
+    setPlayerEnergy(baseEnergy);
     setPlayerBlock(0);
     
     if (enemyBurn > 0) {
       setEnemyHp(prev => {
         const nextHp = Math.max(0, prev - enemyBurn);
-        if (nextHp <= 0) setTimeout(() => onCombatWin(playerHp), 800);
+        if (nextHp <= 0) setTimeout(() => onCombatWin(playerHp), 600);
         return nextHp;
       });
-      addLog(`🔥 Brand fügt dem Gegner ${enemyBurn} Schaden zu.`);
     }
 
     let newDeck = [...currentDeck];
@@ -83,7 +90,7 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
     let dmgToPlayer = enemyIntent.type.includes('attack') ? enemyIntent.value : 0;
 
     if (dmgToPlayer > 0) {
-      playHit(); // Gegner trifft!
+      playHit(); 
       setFoxAnimate('bg-red-500/30');
       setTimeout(() => setFoxAnimate(''), 300);
 
@@ -92,17 +99,25 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
       
       setPlayerHp(prev => {
         const nextHp = Math.max(0, prev - dmgAfterBlock);
-        if (nextHp <= 0) setTimeout(() => onCombatLose(), 800);
+        if (nextHp <= 0) {
+          setTimeout(() => onCombatLose(), 600);
+          return 0; // Garantierter Stop bei 0 HP
+        }
         return nextHp;
       });
-      addLog(`${enemy.name} greift an. Du nimmst ${dmgAfterBlock} Schaden.`);
     }
 
-    setTimeout(() => startPlayerTurn(nextDiscard, deck), 600);
+    // Gegner-Runde abschließen, nur wenn Spieler überlebt
+    setTimeout(() => {
+      setPlayerHp(current => {
+        if (current > 0) startPlayerTurn(nextDiscard, deck);
+        return current;
+      });
+    }, 600);
   };
 
   const playCard = (card, index) => {
-    if (playerEnergy < card.cost) return;
+    if (playerEnergy < card.cost || enemyHp <= 0 || playerHp <= 0) return;
     playClick();
     setPlayerEnergy(prev => prev - card.cost);
     
@@ -115,7 +130,7 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
       setPlayerBlock(prev => prev + card.block);
     }
     if (card.damage > 0) {
-      playHit(); // Fuchs trifft!
+      playHit();
       setEnemyAnimate('bg-orange-500/30');
       setTimeout(() => setEnemyAnimate(''), 200);
 
@@ -132,40 +147,62 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-between p-4 md:p-6 pb-24 text-white">
-      {/* UI Kampf... (Rest wie gehabt, nur mit verbesserter Anzeige) */}
-      <div className="flex justify-between p-3 bg-slate-900 border border-slate-800 rounded-xl">
+    <div className={`h-[calc(100dvh-68px)] flex flex-col justify-between overflow-hidden text-white ${getBgStyle(enemy.act)}`}>
+      
+      {/* Kopfbereich */}
+      <div className="flex justify-between p-3 bg-slate-950/50 border-b border-slate-800 shadow-md shrink-0">
         <h2 className="font-bold text-red-400">{enemy.name} (HP: {enemyHp}/{enemy.maxHp})</h2>
         <div className="text-amber-400 font-bold">🦊 HP: {playerHp}/{character.maxHp}</div>
       </div>
       
-      {/* Sprite Bereich */}
-      <div className="grid grid-cols-2 gap-4 flex-1 items-center justify-items-center">
-        <div className={`text-6xl animate-bounce-slow ${foxAnimate}`}>🦊<div className="text-blue-400 text-sm mt-2 font-bold text-center">🛡️ {playerBlock}</div></div>
-        <div className={`text-6xl ${enemyAnimate}`}>{enemy.sprite}<div className="text-blue-400 text-sm mt-2 font-bold text-center">🛡️ {enemyBlock}</div><div className="text-red-400 text-sm mt-1 font-bold text-center">⚔️ {enemyIntent.value}</div></div>
+      {/* Schlachtfeld */}
+      <div className="flex-1 grid grid-cols-2 gap-4 items-center justify-items-center">
+        <div className={`text-6xl sm:text-7xl animate-bounce-slow rounded-full p-4 ${foxAnimate}`}>
+          🦊
+          <div className="text-blue-400 text-sm mt-2 font-bold text-center">🛡️ {playerBlock}</div>
+        </div>
+        <div className={`text-6xl sm:text-7xl rounded-full p-4 ${enemyAnimate}`}>
+          {enemy.sprite}
+          <div className="text-blue-400 text-sm mt-2 font-bold text-center">🛡️ {enemyBlock}</div>
+          <div className="text-red-400 text-sm mt-1 font-bold text-center">⚔️ {enemyIntent.value}</div>
+        </div>
       </div>
 
-      {/* Hand & Mana */}
-      <div className="mt-auto">
-        <div className="flex justify-between items-center mb-4 px-2">
-          <div className="w-14 h-14 bg-cyan-900 border-2 border-cyan-400 rounded-full flex flex-col items-center justify-center font-bold text-xl shadow-[0_0_15px_cyan]">
+      {/* Kontrollbereich am unteren Rand */}
+      <div className="shrink-0 bg-slate-950/80 border-t border-slate-800 pb-2">
+        <div className="flex justify-between items-center p-3">
+          <div className="w-12 h-12 bg-cyan-900 border-2 border-cyan-400 rounded-full flex items-center justify-center font-bold text-xl shadow-[0_0_10px_cyan]">
             {playerEnergy}
           </div>
-          <button onClick={endTurn} className="px-6 py-3 bg-orange-700 hover:bg-orange-600 font-bold rounded-xl shadow-lg border border-orange-500">Zug beenden</button>
+          <button type="button" onClick={endTurn} disabled={playerHp <= 0 || enemyHp <= 0} className="px-6 py-3 bg-orange-700 hover:bg-orange-600 font-bold rounded-xl shadow-lg border border-orange-500 disabled:opacity-50 outline-none">
+            Zug beenden
+          </button>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-4">
+        
+        {/* Karten-Hand Container mit festem Padding für Sichtbarkeit */}
+        <div className="flex gap-2 overflow-x-auto px-3 pb-4 min-h-[140px]">
           {hand.map((card, idx) => {
              const canPlay = playerEnergy >= card.cost;
              return (
-               <button key={card.uniqId} disabled={!canPlay} onClick={() => playCard(card, idx)} className={`flex-shrink-0 w-28 p-3 rounded-xl border-2 text-left transition-transform ${canPlay ? 'border-amber-500 bg-slate-800 hover:-translate-y-2' : 'border-slate-700 bg-slate-900 opacity-50'}`}>
-                 <div className="flex justify-between items-center text-xs mb-1 font-bold"><span className="text-slate-400 uppercase">{card.type}</span><span className="bg-cyan-900 text-cyan-300 w-5 h-5 rounded-full flex items-center justify-center">{card.cost}</span></div>
+               <button 
+                 type="button" 
+                 key={card.uniqId} 
+                 disabled={!canPlay || playerHp <= 0 || enemyHp <= 0} 
+                 onClick={() => playCard(card, idx)} 
+                 className={`flex-shrink-0 w-28 p-3 rounded-xl border-2 text-left transition-transform outline-none ${canPlay ? 'border-amber-500 bg-slate-800 hover:-translate-y-2' : 'border-slate-700 bg-slate-900 opacity-50'}`}
+               >
+                 <div className="flex justify-between items-center text-[10px] mb-1 font-bold">
+                   <span className="text-slate-400 uppercase truncate pr-1">{card.type}</span>
+                   <span className="bg-cyan-900 text-cyan-300 w-5 h-5 rounded-full flex items-center justify-center shrink-0">{card.cost}</span>
+                 </div>
                  <div className="font-bold text-sm mb-1">{card.name}</div>
-                 <div className="text-[10px] text-slate-300">{card.desc}</div>
+                 <div className="text-[10px] text-slate-300 leading-tight">{card.desc}</div>
                </button>
              );
           })}
         </div>
       </div>
+
     </div>
   );
 }
