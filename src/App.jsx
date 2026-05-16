@@ -3,12 +3,12 @@ import CharacterSelect from './components/CharacterSelect';
 import GameMap from './components/GameMap';
 import CombatScreen from './components/CombatScreen';
 import { CHARACTERS, ENEMIES, ARTIFACTS, CARDS, EVENTS } from './data/gameData';
-import { Trophy, ShieldAlert, Package, ShoppingCart, Coffee, HelpCircle, Coins, Heart, Volume2, VolumeX, AlertTriangle, Sparkles, Crown, Flame } from 'lucide-react';
+import { Trophy, ShieldAlert, Package, ShoppingCart, Coffee, HelpCircle, Coins, Heart, Volume2, VolumeX, AlertTriangle, Sparkles, Crown } from 'lucide-react';
 import { startBGM, stopBGM, playClick, playReward } from './utils/audio';
 
 export default function App() {
   const [characters, setCharacters] = useState(() => {
-    const local = localStorage.getItem('fox_rogue_chars_v7');
+    const local = localStorage.getItem('fox_rogue_chars_v8');
     return local ? JSON.parse(local) : CHARACTERS;
   });
 
@@ -21,28 +21,30 @@ export default function App() {
   
   const [playerGold, setPlayerGold] = useState(100);
   const [playerCurrentHp, setPlayerCurrentHp] = useState(80);
+  const [playerMaxHp, setPlayerMaxHp] = useState(80);
   const [playerDeck, setPlayerDeck] = useState([]);
   const [playerArtifacts, setPlayerArtifacts] = useState([]);
   
   const [currentEnemy, setCurrentEnemy] = useState(null);
   const [earnedGoldThisCombat, setEarnedGoldThisCombat] = useState(0);
-  const [shopInventory, setShopInventory] = useState({ cards: [], potions: [] });
+  const [shopInventory, setShopInventory] = useState({ cards: [] });
   const [activeEvent, setActiveEvent] = useState(null);
 
   const [startBonusChoice, setStartBonusChoice] = useState({ card: null, artifact: null });
   const [bossRewardChoices, setBossRewardChoices] = useState([]);
+  const [eliteRewardChoices, setEliteRewardChoices] = useState([]);
 
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('fox_rogue_chars_v7', JSON.stringify(characters));
+    localStorage.setItem('fox_rogue_chars_v8', JSON.stringify(characters));
   }, [characters]);
 
   useEffect(() => {
-    if (audioEnabled) startBGM();
+    if (audioEnabled && gameState !== 'CHAR_SELECT') startBGM(currentAct);
     else stopBGM();
-  }, [audioEnabled]);
+  }, [audioEnabled, gameState, currentAct]);
 
   const toggleAudio = () => {
     setAudioEnabled(!audioEnabled);
@@ -52,6 +54,7 @@ export default function App() {
   const handleSelectCharacter = (char) => {
     setSelectedChar(char);
     setPlayerCurrentHp(char.hp);
+    setPlayerMaxHp(char.maxHp);
     setPlayerGold(100);
     const startDeck = char.startingDeck.map((cardId, index) => ({ ...CARDS[cardId], uniqId: `${cardId}-start-${index}` }));
     setPlayerDeck(startDeck);
@@ -73,18 +76,18 @@ export default function App() {
     setGameState('MAP');
   };
 
+  const advanceMap = () => { setCurrentTier(prev => Math.min(9, prev + 1)); setGameState('MAP'); };
+  
   const handleSelectNode = (node) => {
     setVisitedNodes(prev => [...prev, node.id]);
     if (audioEnabled) playClick();
     
     if (node.type === 'Kampf' || node.type === 'Elite' || node.type === 'Boss') {
-      // FIX: Mapping von Knotentyp 'Kampf' auf Gegnertyp 'Normal'
       const searchType = node.type === 'Kampf' ? 'Normal' : node.type;
       let enemyPool = ENEMIES.filter(e => e.type === searchType && e.act === currentAct);
+      if (enemyPool.length === 0) enemyPool = ENEMIES.filter(e => e.type === 'Normal');
       
-      if (enemyPool.length === 0) enemyPool = ENEMIES.filter(e => e.type === 'Normal' && e.act === 1);
       const baseEnemy = enemyPool[Math.floor(Math.random() * enemyPool.length)];
-      
       const ascensionMult = 1 + (selectedChar.ascensionLevel || 0) * 0.10;
       const scaledHp = Math.floor(baseEnemy.hp * ascensionMult);
       
@@ -106,7 +109,6 @@ export default function App() {
       
     } else if (node.type === 'Lagerfeuer') {
       setGameState('CAMPFIRE');
-      
     } else if (node.type === 'Ereignis') {
       setActiveEvent(EVENTS[Math.floor(Math.random() * EVENTS.length)]);
       setGameState('EVENT');
@@ -115,11 +117,18 @@ export default function App() {
 
   const handleCombatWin = (remainingHp) => {
     if (audioEnabled) playReward();
-    setPlayerCurrentHp(remainingHp);
-    setPlayerGold(prev => prev + earnedGoldThisCombat);
+    // Artefakt-Heilung berechnen
+    let healAmount = playerArtifacts.includes('vampire_fang') ? 2 : 0;
+    setPlayerCurrentHp(Math.min(playerMaxHp, remainingHp + healAmount));
+    
+    // Gold Artefakt berechnen
+    let goldGained = earnedGoldThisCombat;
+    if (playerArtifacts.includes('golden_acorn')) goldGained = Math.floor(goldGained * 1.2);
+    setPlayerGold(prev => prev + goldGained);
     
     if (currentEnemy && currentEnemy.type === 'Boss') {
       if (currentAct < 3) {
+        if (playerArtifacts.includes('boss_void_cloak')) setPlayerCurrentHp(playerMaxHp); // Boss Heilungs Artefakt
         const bossArts = Object.values(ARTIFACTS).filter(a => a.isBoss);
         setBossRewardChoices(bossArts.sort(() => 0.5 - Math.random()).slice(0, 3));
         setGameState('BOSS_REWARD');
@@ -127,38 +136,39 @@ export default function App() {
         setCharacters(prev => prev.map(c => c.id === selectedChar.id ? { ...c, ascensionLevel: (c.ascensionLevel || 0) + 1 } : c));
         setGameState('WIN_SCREEN');
       }
+    } else if (currentEnemy && currentEnemy.type === 'Elite') {
+      // Reparierte Elite Belohnung (Verhinderte vorher das Weiterkommen)
+      const normalArtifacts = Object.values(ARTIFACTS).filter(a => !a.isBoss);
+      setEliteRewardChoices(normalArtifacts.sort(() => 0.5 - Math.random()).slice(0, 2));
+      setGameState('ELITE_REWARD');
     } else {
       setGameState('REWARD');
     }
   };
 
   const claimBossReward = (artifactId) => {
+    if (artifactId) {
+      if (artifactId === 'boss_heart_fragment') setPlayerMaxHp(p => p + 20); // Artefakt Effekt direkt
+      setPlayerArtifacts(prev => [...prev, artifactId]);
+    }
+    setCurrentAct(prev => prev + 1); setCurrentTier(0); setVisitedNodes([]); setGameState('MAP');
+  };
+
+  const claimEliteReward = (artifactId) => {
     if (artifactId) setPlayerArtifacts(prev => [...prev, artifactId]);
-    setCurrentAct(prev => prev + 1);
-    setCurrentTier(0);
-    setVisitedNodes([]);
-    setGameState('MAP');
+    setGameState('REWARD'); // Nach Artefakt noch Karte wählen
   };
 
   const claimCardReward = (chosenCard) => {
-    if (chosenCard) {
-      setPlayerDeck(prev => [...prev, { ...chosenCard, uniqId: `reward-${Date.now()}` }]);
-    }
+    if (chosenCard) setPlayerDeck(prev => [...prev, { ...chosenCard, uniqId: `reward-${Date.now()}` }]);
     advanceMap();
   };
 
-  const advanceMap = () => { setCurrentTier(prev => Math.min(9, prev + 1)); setGameState('MAP'); };
   const resetToMenu = () => { setShowAbortConfirm(false); setGameState('CHAR_SELECT'); setSelectedChar(null); };
 
   const eventAPI = {
-    hurt: (amount) => {
-      setPlayerCurrentHp(p => {
-        const next = Math.max(0, p - amount);
-        if (next === 0) setTimeout(() => setGameState('LOSE_SCREEN'), 500);
-        return next;
-      });
-    },
-    heal: (amount) => setPlayerCurrentHp(p => Math.min(selectedChar.maxHp, p + amount)),
+    hurt: (amount) => { setPlayerCurrentHp(p => { const next = Math.max(0, p - amount); if (next === 0) setTimeout(() => setGameState('LOSE_SCREEN'), 500); return next; }); },
+    heal: (amount) => setPlayerCurrentHp(p => Math.min(playerMaxHp, p + amount)),
     spend: (amount) => setPlayerGold(p => Math.max(0, p - amount)),
     gainGold: (amount) => setPlayerGold(p => p + amount),
     addCard: (cardId) => setPlayerDeck(p => [...p, { ...CARDS[cardId], uniqId: `evt-${Date.now()}` }]),
@@ -169,16 +179,12 @@ export default function App() {
   const TopBar = () => (
     <div className="w-full bg-slate-950/90 border-b border-slate-800 p-3 flex justify-between items-center z-40 sticky top-0 h-[68px]">
       <div className="flex gap-4">
-        <div className="font-bold text-amber-400 flex items-center gap-1 min-h-[44px]"><Heart size={16} className="text-red-500"/> {playerCurrentHp}/{selectedChar?.maxHp}</div>
+        <div className="font-bold text-amber-400 flex items-center gap-1 min-h-[44px]"><Heart size={16} className="text-red-500"/> {playerCurrentHp}/{playerMaxHp}</div>
         <div className="font-bold text-amber-400 flex items-center gap-1 min-h-[44px]"><Coins size={16}/> {playerGold}</div>
       </div>
       <div className="flex gap-2">
-        <button type="button" onClick={toggleAudio} className="p-2 bg-slate-900 border border-slate-700 rounded-lg outline-none">
-          {audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} className="text-slate-500" />}
-        </button>
-        <button type="button" onClick={() => setShowAbortConfirm(true)} className="px-3 py-2 bg-red-950/50 border border-red-800 rounded-lg text-xs font-bold text-red-200 outline-none">
-          Abbrechen
-        </button>
+        <button type="button" onClick={toggleAudio} className="p-2 bg-slate-900 border border-slate-700 rounded-lg outline-none">{audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} className="text-slate-500" />}</button>
+        <button type="button" onClick={() => setShowAbortConfirm(true)} className="px-3 py-2 bg-red-950/50 border border-red-800 rounded-lg text-xs font-bold text-red-200 outline-none">Abbrechen</button>
       </div>
     </div>
   );
@@ -240,22 +246,42 @@ export default function App() {
                 </button>
               ))}
             </div>
+            <button type="button" onClick={() => claimBossReward(null)} className="text-xs text-slate-500 hover:text-slate-300 font-mono underline outline-none">Überspringen</button>
+          </div>
+        )}
+        
+        {gameState === 'ELITE_REWARD' && (
+          <div className="p-4 text-center mt-10">
+            <Flame size={60} className="text-red-500 mx-auto mb-6 animate-pulse" />
+            <h2 className="text-3xl font-black text-amber-400 mb-8">Elite besiegt! Wähle ein Artefakt:</h2>
+            <div className="flex flex-col gap-4 max-w-lg mx-auto mb-8">
+              {eliteRewardChoices.map((artifact, i) => (
+                <button type="button" key={i} onClick={() => claimEliteReward(artifact.id)} className="border-2 border-slate-700 bg-slate-900 p-5 rounded-xl text-left hover:border-red-500 transition outline-none">
+                  <div className="font-bold text-red-400 text-lg">{artifact.name}</div><div className="text-sm text-slate-300">{artifact.desc}</div>
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={() => claimEliteReward(null)} className="text-xs text-slate-500 hover:text-slate-300 font-mono underline outline-none">Überspringen</button>
           </div>
         )}
 
         {gameState === 'MAP' && <GameMap currentTier={currentTier} currentAct={currentAct} visitedNodes={visitedNodes} onSelectNode={handleSelectNode} character={selectedChar} playerArtifacts={playerArtifacts} />}
-        {gameState === 'COMBAT' && <CombatScreen character={{...selectedChar, currentHp: playerCurrentHp, maxHp: selectedChar.maxHp, startingDeck: playerDeck}} enemy={currentEnemy} playerArtifacts={playerArtifacts} onCombatWin={handleCombatWin} onCombatLose={() => setGameState('LOSE_SCREEN')} />}
+        {gameState === 'COMBAT' && <CombatScreen character={{...selectedChar, currentHp: playerCurrentHp, maxHp: playerMaxHp, startingDeck: playerDeck}} enemy={currentEnemy} playerArtifacts={playerArtifacts} onCombatWin={handleCombatWin} onCombatLose={() => setGameState('LOSE_SCREEN')} />}
 
         {gameState === 'SHOP' && (
           <div className="min-h-[80vh] p-4 flex flex-col items-center">
             <h2 className="text-2xl font-bold flex items-center gap-2 text-cyan-400 mb-6 mt-4"><ShoppingCart /> Fuchshändler</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-4xl">
-              {shopInventory.cards?.map((card, idx) => (
-                <button type="button" key={idx} disabled={playerGold < card.price} onClick={() => { setPlayerGold(p => p - card.price); setPlayerDeck(p => [...p, { ...card, uniqId: `shop-${Date.now()}` }]); setShopInventory(prev => ({...prev, cards: prev.cards.filter((_, i) => i !== idx)})); }} className="border border-slate-800 bg-slate-900/80 p-4 rounded-xl flex flex-col justify-between text-left hover:border-cyan-500 disabled:opacity-40 transition min-h-[100px] outline-none">
-                  <div><div className="font-bold text-slate-200">{card.name}</div><p className="text-xs text-slate-400">{card.desc}</p></div>
-                  <div className="mt-2 text-sm font-bold text-amber-400"><Coins size={14} className="inline"/> {card.price}</div>
-                </button>
-              ))}
+              {shopInventory.cards?.map((card, idx) => {
+                let cost = card.price;
+                if (playerArtifacts.includes('ancient_coin')) cost = Math.floor(cost * 0.8);
+                return (
+                  <button type="button" key={idx} disabled={playerGold < cost} onClick={() => { setPlayerGold(p => p - cost); setPlayerDeck(p => [...p, { ...card, uniqId: `shop-${Date.now()}` }]); setShopInventory(prev => ({...prev, cards: prev.cards.filter((_, i) => i !== idx)})); }} className="border border-slate-800 bg-slate-900/80 p-4 rounded-xl flex flex-col justify-between text-left hover:border-cyan-500 disabled:opacity-40 transition min-h-[100px] outline-none">
+                    <div><div className="font-bold text-slate-200">{card.name}</div><p className="text-xs text-slate-400">{card.desc}</p></div>
+                    <div className="mt-2 text-sm font-bold text-amber-400"><Coins size={14} className="inline"/> {cost}</div>
+                  </button>
+                )
+              })}
             </div>
             <button type="button" onClick={advanceMap} className="mt-8 px-8 py-4 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-sm transition min-h-[44px] outline-none">Shop verlassen</button>
           </div>
@@ -266,7 +292,7 @@ export default function App() {
             <Flame size={48} className="text-orange-500 mb-6 animate-pulse" />
             <h2 className="text-2xl font-black mb-8">Sichere Lichtung</h2>
             <div className="flex flex-col w-full max-w-sm gap-4">
-              <button type="button" onClick={() => { setPlayerCurrentHp(p => Math.min(selectedChar.maxHp, p + Math.floor(selectedChar.maxHp * 0.3))); advanceMap(); }} className="border border-slate-700 bg-slate-900 p-6 rounded-xl hover:border-emerald-500 transition min-h-[80px] outline-none">
+              <button type="button" onClick={() => { setPlayerCurrentHp(p => Math.min(playerMaxHp, p + Math.floor(playerMaxHp * 0.3))); advanceMap(); }} className="border border-slate-700 bg-slate-900 p-6 rounded-xl hover:border-emerald-500 transition min-h-[80px] outline-none">
                 <Heart className="mx-auto text-emerald-500 mb-2"/>
                 <div className="font-bold">Ausruhen</div>
                 <p className="text-xs text-slate-400">Heilt 30% max HP</p>
@@ -296,7 +322,7 @@ export default function App() {
 
         {gameState === 'REWARD' && (
           <div className="p-4 text-center mt-20">
-            <h2 className="text-2xl font-black text-amber-400 mb-6">Sieg! Wähle eine Karte:</h2>
+            <h2 className="text-2xl font-black text-amber-400 mb-6">Kampf gewonnen! Wähle eine Karte:</h2>
             <div className="flex flex-col gap-4 max-w-sm mx-auto mb-6">
               {[...Array(3)].map((_, i) => {
                 const k = Object.keys(CARDS);
@@ -312,7 +338,6 @@ export default function App() {
           <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center bg-slate-900">
             <Trophy size={60} className="text-amber-400 mb-6 animate-bounce" />
             <h1 className="text-3xl font-black text-amber-400 mb-4">RUN GEWONNEN!</h1>
-            <p className="text-slate-300 mb-8 max-w-sm">Aufstiegslevel freigeschaltet. Die nächste Reise wird gefährlicher.</p>
             <button type="button" onClick={resetToMenu} className="px-8 py-4 bg-amber-600 hover:bg-amber-500 font-bold rounded-xl min-h-[44px] outline-none">Hauptmenü</button>
           </div>
         )}
