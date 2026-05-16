@@ -14,6 +14,7 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
   const [enemyBlock, setEnemyBlock] = useState(enemy.block || 0);
   const [enemyIntent, setEnemyIntent] = useState({ type: 'attack', value: enemy.intentValue });
   const [enemyBurn, setEnemyBurn] = useState(0);
+  const [enemyWeak, setEnemyWeak] = useState(0);
 
   const [deck, setDeck] = useState([]);
   const [hand, setHand] = useState([]);
@@ -22,7 +23,6 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
   const [foxAnimate, setFoxAnimate] = useState('');
   const [enemyAnimate, setEnemyAnimate] = useState('');
   
-  // Schadens-Text Animationen
   const [playerDmgText, setPlayerDmgText] = useState(null);
   const [enemyDmgText, setEnemyDmgText] = useState(null);
 
@@ -36,7 +36,13 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
   };
 
   useEffect(() => {
-    if (playerArtifacts?.includes('boss_dragon_scale')) setPlayerBlock(12);
+    // Start Artefakte
+    let startBlock = 0;
+    if (playerArtifacts?.includes('boss_dragon_scale')) startBlock += 15;
+    if (playerArtifacts?.includes('magic_pouch')) startBlock += 10;
+    setPlayerBlock(startBlock);
+    
+    if (playerArtifacts?.includes('shadow_charm')) setEnemyWeak(2);
 
     const fullDeck = (character.startingDeck || []).map((card, index) => {
       const cardObj = typeof card === 'string' ? CARDS[card] : card;
@@ -63,8 +69,16 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
 
   const startPlayerTurn = (currentDiscard, currentDeck) => {
     if (playerHp <= 0) return;
-    setPlayerEnergy(baseEnergy);
-    setPlayerBlock(0);
+    
+    let currentEnergy = baseEnergy;
+    if (playerArtifacts?.includes('swift_boots') && currentDiscard.length === 0) currentEnergy += 2; // Nur im allerersten Zug
+    setPlayerEnergy(currentEnergy);
+    
+    let blockThisTurn = 0;
+    if (playerArtifacts?.includes('thick_fur')) blockThisTurn += 3;
+    setPlayerBlock(blockThisTurn);
+    
+    if (playerArtifacts?.includes('regeneration_ring')) setPlayerHp(p => Math.min(character.maxHp, p + 1));
     
     if (enemyBurn > 0) {
       showDamage('enemy', enemyBurn);
@@ -74,6 +88,7 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
         return nextHp;
       });
     }
+    if (enemyWeak > 0) setEnemyWeak(prev => prev - 1);
 
     let newDeck = [...currentDeck];
     let newDiscard = [...currentDiscard];
@@ -100,6 +115,7 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
     setTimeout(() => setEnemyAnimate(''), 400);
 
     let dmgToPlayer = enemyIntent.type.includes('attack') ? enemyIntent.value : 0;
+    if (enemyWeak > 0) dmgToPlayer = Math.max(1, Math.floor(dmgToPlayer * 0.75));
 
     if (dmgToPlayer > 0) {
       playHit(); 
@@ -113,19 +129,13 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
       
       setPlayerHp(prev => {
         const nextHp = Math.max(0, prev - dmgAfterBlock);
-        if (nextHp <= 0) {
-          setTimeout(() => onCombatLose(), 600);
-          return 0;
-        }
+        if (nextHp <= 0) { setTimeout(() => onCombatLose(), 600); return 0; }
         return nextHp;
       });
     }
 
     setTimeout(() => {
-      setPlayerHp(current => {
-        if (current > 0) startPlayerTurn(nextDiscard, deck);
-        return current;
-      });
+      setPlayerHp(current => { if (current > 0) startPlayerTurn(nextDiscard, deck); return current; });
     }, 600);
   };
 
@@ -139,16 +149,19 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
     setHand(newHand);
     setDiscard(prev => [...prev, card]);
 
-    if (card.block > 0) {
-      setPlayerBlock(prev => prev + card.block);
-    }
+    if (card.block > 0) setPlayerBlock(prev => prev + card.block);
+    
     if (card.damage > 0) {
       playHit();
       setEnemyAnimate('bg-orange-500/30 scale-95 transition-transform');
       setTimeout(() => setEnemyAnimate(''), 200);
 
-      const dmgAfterBlock = Math.max(0, card.damage - enemyBlock);
-      setEnemyBlock(Math.max(0, enemyBlock - card.damage));
+      let finalDmg = card.damage;
+      if (playerArtifacts?.includes('rusty_sword')) finalDmg += 2;
+      if (playerArtifacts?.includes('iron_tail') && card.id === 'tail_swipe') finalDmg += 4;
+      
+      const dmgAfterBlock = Math.max(0, finalDmg - enemyBlock);
+      setEnemyBlock(Math.max(0, enemyBlock - finalDmg));
       
       if (dmgAfterBlock > 0) showDamage('enemy', dmgAfterBlock);
       
@@ -157,37 +170,27 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
         if (nextHp <= 0) setTimeout(() => onCombatWin(playerHp), 600);
         return nextHp;
       });
+      
+      if (playerArtifacts?.includes('toxic_gland')) { /* Gift implementiert, wenn UI dafür existiert */ }
     }
-    if (card.burn > 0) setEnemyBurn(prev => prev + card.burn);
+    
+    let finalBurn = card.burn || 0;
+    if (finalBurn > 0 && playerArtifacts?.includes('sacred_flame')) finalBurn += 2;
+    if (finalBurn > 0) setEnemyBurn(prev => prev + finalBurn);
   };
 
   return (
     <div className={`h-[calc(100dvh-68px)] flex flex-col justify-between overflow-hidden text-white ${getBgStyle(enemy.act)} relative`}>
-      
-      {/* CSS Animationen für schwebenden Text und Kartenziehen */}
       <style>{`
-        @keyframes floatDmg {
-          0% { opacity: 1; transform: translateY(0) scale(1); }
-          100% { opacity: 0; transform: translateY(-50px) scale(1.5); }
-        }
+        @keyframes floatDmg { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.5); } }
         .animate-dmg { animation: floatDmg 0.8s ease-out forwards; }
-        
-        @keyframes drawCard {
-          0% { opacity: 0; transform: translateY(100px) translateX(-100vw) scale(0.3) rotate(-30deg); }
-          100% { opacity: 1; transform: translateY(0) translateX(0) scale(1) rotate(0deg); }
-        }
+        @keyframes drawCard { 0% { opacity: 0; transform: translateY(100px) translateX(-100vw) scale(0.3) rotate(-30deg); } 100% { opacity: 1; transform: translateY(0) translateX(0) scale(1) rotate(0deg); } }
         .card-draw { animation: drawCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
       `}</style>
 
-      {/* Unsichtbarer Header-Abstand, da HP jetzt über den Avataren schweben */}
-      <div className="flex justify-between p-3 shrink-0 opacity-0 pointer-events-none">
-        <h2>Spacer</h2>
-      </div>
+      <div className="flex justify-between p-3 shrink-0 opacity-0 pointer-events-none"><h2>Spacer</h2></div>
       
-      {/* Schlachtfeld */}
       <div className="flex-1 grid grid-cols-2 gap-4 items-center justify-items-center relative">
-        
-        {/* Spieler Fuchs */}
         <div className="flex flex-col items-center relative">
           <div className="mb-2 text-center">
             <span className="text-xs font-bold text-amber-400 block mb-1">{playerHp} / {character.maxHp} HP</span>
@@ -195,7 +198,6 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
                <div className="h-full bg-amber-500 transition-all duration-300" style={{ width: `${(playerHp/character.maxHp)*100}%`}} />
             </div>
           </div>
-          
           <div className={`text-6xl sm:text-7xl animate-bounce-slow rounded-full p-4 relative ${foxAnimate}`}>
             🦊
             {playerDmgText && <span className="absolute top-0 left-1/2 -translate-x-1/2 text-2xl font-black text-red-500 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] animate-dmg z-50 pointer-events-none">{playerDmgText}</span>}
@@ -203,7 +205,6 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
           </div>
         </div>
 
-        {/* Gegner */}
         <div className="flex flex-col items-center relative">
           <div className="mb-2 text-center">
             <span className="text-xs font-bold text-red-400 block mb-1">{enemy.name}</span>
@@ -211,51 +212,34 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
                <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${(enemyHp/enemy.maxHp)*100}%`}} />
             </div>
           </div>
-
           <div className={`text-6xl sm:text-7xl rounded-full p-4 relative ${enemyAnimate}`}>
             {enemy.sprite}
             {enemyDmgText && <span className="absolute top-0 left-1/2 -translate-x-1/2 text-2xl font-black text-red-500 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] animate-dmg z-50 pointer-events-none">{enemyDmgText}</span>}
             <div className="text-blue-400 text-sm mt-2 font-bold text-center">🛡️ {enemyBlock}</div>
             <div className="absolute -top-6 -left-6 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-red-400 shadow-xl flex items-center gap-1">
-              ⚔️ {enemyIntent.value}
+              ⚔️ {enemyIntent.value} {enemyWeak > 0 && <span className="text-purple-400 text-[10px]"> (Schwach)</span>}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Kontrollbereich am unteren Rand */}
       <div className="shrink-0 bg-slate-950/90 border-t border-slate-800 pb-2 backdrop-blur-md relative">
         <div className="flex justify-between items-center p-3">
-          <div className="w-12 h-12 bg-cyan-900 border-2 border-cyan-400 rounded-full flex items-center justify-center font-bold text-xl shadow-[0_0_10px_cyan]">
-            {playerEnergy}
-          </div>
-          <button type="button" onClick={endTurn} disabled={playerHp <= 0 || enemyHp <= 0} className="px-6 py-3 bg-orange-700 hover:bg-orange-600 font-bold rounded-xl shadow-lg border border-orange-500 disabled:opacity-50 outline-none">
-            Zug beenden
-          </button>
+          <div className="w-12 h-12 bg-cyan-900 border-2 border-cyan-400 rounded-full flex items-center justify-center font-bold text-xl shadow-[0_0_10px_cyan]">{playerEnergy}</div>
+          <button type="button" onClick={endTurn} disabled={playerHp <= 0 || enemyHp <= 0} className="px-6 py-3 bg-orange-700 hover:bg-orange-600 font-bold rounded-xl shadow-lg border border-orange-500 disabled:opacity-50 outline-none">Zug beenden</button>
         </div>
         
-        {/* Karten Bereich: Deck links, Hand mittig, Discard rechts */}
         <div className="flex justify-between items-end px-3 pb-4 min-h-[140px] relative">
-          
-          {/* Deck Visualisierung */}
           <div className="w-16 h-24 border-2 border-slate-700 bg-slate-800 rounded-xl flex items-center justify-center shrink-0 relative overflow-hidden hidden sm:flex">
              <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#fff_5px,#fff_10px)]"></div>
              <span className="font-bold text-xl z-10 text-slate-300">{deck.length}</span>
           </div>
 
-          {/* Mittig zentrierte Kartenhand */}
           <div className="flex-1 flex justify-center gap-2 overflow-x-auto px-2">
             {hand.map((card, idx) => {
                const canPlay = playerEnergy >= card.cost;
                return (
-                 <button 
-                   type="button" 
-                   key={card.uniqId} 
-                   disabled={!canPlay || playerHp <= 0 || enemyHp <= 0} 
-                   onClick={() => playCard(card, idx)} 
-                   style={{ animationDelay: `${idx * 0.08}s` }}
-                   className={`card-draw flex-shrink-0 w-28 p-3 rounded-xl border-2 text-left transition-transform outline-none ${canPlay ? 'border-amber-500 bg-slate-800 hover:-translate-y-4 shadow-xl' : 'border-slate-700 bg-slate-900 opacity-50'}`}
-                 >
+                 <button type="button" key={card.uniqId} disabled={!canPlay || playerHp <= 0 || enemyHp <= 0} onClick={() => playCard(card, idx)} style={{ animationDelay: `${idx * 0.08}s` }} className={`card-draw flex-shrink-0 w-28 p-3 rounded-xl border-2 text-left transition-transform outline-none ${canPlay ? 'border-amber-500 bg-slate-800 hover:-translate-y-4 shadow-xl' : 'border-slate-700 bg-slate-900 opacity-50'}`}>
                    <div className="flex justify-between items-center text-[10px] mb-1 font-bold">
                      <span className="text-slate-400 uppercase truncate pr-1">{card.type}</span>
                      <span className="bg-cyan-900 text-cyan-300 w-5 h-5 rounded-full flex items-center justify-center shrink-0">{card.cost}</span>
@@ -267,11 +251,9 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
             })}
           </div>
 
-          {/* Ablagestapel Visualisierung */}
           <div className="w-16 h-24 border-2 border-slate-800 bg-slate-900 rounded-xl flex items-center justify-center shrink-0 opacity-70 hidden sm:flex">
              <span className="font-bold text-xl text-slate-500">{discard.length}</span>
           </div>
-          
         </div>
       </div>
     </div>
