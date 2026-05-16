@@ -14,7 +14,7 @@ export const CHARACTERS = [
     bgLight: 'bg-orange-950/40',
     textColor: 'text-orange-400',
     description: 'Ein ausgeglichener Fuchs, der auf solide Angriffe und zuverlässige Verteidigung setzt.',
-    ability: { name: 'Fuchsschwanz-Konter', desc: 'Jedes Mal, wenn du Block verlierst, füge dem Angreifer 2 Schaden zu.' },
+    ability: { name: 'Fuchsschwanz-Konter', desc: 'Jedes Mal, wenn Block verloren wird, füge dem Angreifer 2 Schaden zu.' },
     startingDeck: ['strike', 'strike', 'strike', 'defend', 'defend', 'tail_swipe']
   },
   {
@@ -31,87 +31,73 @@ export const CHARACTERS = [
     borderColor: 'border-red-500',
     bgLight: 'bg-red-950/40',
     textColor: 'text-red-400',
-    description: 'Verbrennt seine Gegner mit kontinuierlichem Brandschaden (Burn) und opfert manchmal eigene Verteidigung für pure Kraft.',
+    description: 'Verbrennt die Gegner mit kontinuierlichem Brandschaden (Burn).',
     ability: { name: 'Hitzewelle', desc: 'Füge zu Beginn jedes Kampfes allen Gegnern 3 Brand zu.' },
     startingDeck: ['strike', 'strike', 'ember', 'defend', 'defend', 'pyro_blast']
-  },
-  {
-    id: 'cyber',
-    name: 'Cyber-Fuchs',
-    title: 'Techno-Infiltrator',
-    unlocked: false,
-    unlockCondition: 'Füge in einem einzigen Kampf 50+ Schaden zu',
-    hp: 90,
-    maxHp: 90,
-    energy: 4,
-    maxEnergy: 4,
-    color: 'from-cyan-500 to-blue-600',
-    borderColor: 'border-cyan-500',
-    bgLight: 'bg-cyan-950/40',
-    textColor: 'text-cyan-400',
-    description: 'Nutzt fortschrittliche Schilde, Energie-Manipulation und Drohnen-Angriffe für taktische Überlegenheit.',
-    ability: { name: 'Überladen', desc: 'Starte jeden Kampf mit 1 zusätzlichen Energie, verliere aber im 3. Zug 5 HP.' },
-    startingDeck: ['strike', 'defend', 'defend', 'plasma_shield', 'laser_beam', 'overclock']
-  },
-  {
-    id: 'shadow',
-    name: 'Schatten-Fuchs',
-    title: 'Avatar der Nacht',
-    unlocked: false,
-    unlockCondition: 'Besiege einen Elite-Gegner ohne Schaden zu nehmen',
-    hp: 65,
-    maxHp: 65,
-    energy: 3,
-    maxEnergy: 3,
-    color: 'from-purple-600 to-indigo-950',
-    borderColor: 'border-purple-500',
-    bgLight: 'bg-purple-950/40',
-    textColor: 'text-purple-400',
-    description: 'Manipuliert Flüche, entzieht Gegnern Lebenskraft und agiert aus den Schatten heraus mit kritischen Multiplikatoren.',
-    ability: { name: 'Seelenraub', desc: 'Wenn ein Gegner stirbt, heile dich um 4 HP.' },
-    startingDeck: ['strike', 'strike', 'shadow_stab', 'defend', 'curse_bolt', 'phantom_veil']
   }
 ];
 
+export const ARTIFACTS = {
+  stone_fox_idol: { id: 'stone_fox_idol', name: 'Steinerner Fuchsschrein', desc: 'Jeder Kampf startet mit 1 zusätzlichem Energie.', effect: { type: 'energy', value: 1 } },
+  shadow_charm: { id: 'shadow_charm', name: 'Schattenamulett', desc: 'Gegner starten jeden Kampf mit 2 Schwäche.', effect: { type: 'enemy_weak', value: 2 } },
+  lava_scale: { id: 'lava_scale', name: 'Lavaschuppe', desc: 'Zu Beginn des Zuges, füge einem zufälligen Gegner 2 Brand zu.', effect: { type: 'turn_start_burn', value: 2 } },
+  cyber_core: { id: 'cyber_core', name: 'Kybernetischer Kern', desc: 'Zu Beginn des Zuges wird 1 zusätzliche Karte gezogen.', effect: { type: 'draw', value: 1 } },
+  sacred_flame: { id: 'sacred_flame', name: 'Heilige Flamme', desc: 'Angriffskarten verursachen +2 Brandschaden.', effect: { type: 'burn_bonus', value: 2 } }
+};
+
 export const CARDS = {
-  strike: { id: 'strike', name: 'Prankenhieb', cost: 1, type: 'Angriff', rarity: 'Basis', damage: 6, block: 0, desc: 'Füge einem Gegner 6 Schaden zu.', color: 'border-amber-700 bg-amber-950/50' },
-  defend: { id: 'defend', name: 'Einigeln', cost: 1, type: 'Verteidigung', damage: 0, block: 5, desc: 'Erhalte 5 Block.', color: 'border-blue-700 bg-blue-950/50' },
+  strike: { id: 'strike', name: 'Prankenhieb', cost: 1, type: 'Angriff', damage: 6, desc: 'Füge einem Gegner 6 Schaden zu.', color: 'border-amber-700 bg-amber-950/50' },
+  defend: { id: 'defend', name: 'Einigeln', cost: 1, type: 'Verteidigung', block: 5, desc: 'Erhalte 5 Block.', color: 'border-blue-700 bg-blue-950/50' },
   tail_swipe: { id: 'tail_swipe', name: 'Schwanzfeger', cost: 2, type: 'Angriff', damage: 10, block: 4, desc: 'Füge 10 Schaden zu. Erhalte 4 Block.', color: 'border-orange-700 bg-orange-950/50' },
   
-  // Fire Cards
-  ember: { id: 'ember', name: 'Funkenflug', cost: 1, type: 'Angriff', damage: 4, burn: 3, desc: 'Füge 4 Schaden zu. Verursacht 3 Brand (Gegner verliert jede Runde Leben).', color: 'border-red-700 bg-red-950/50' },
-  pyro_blast: { id: 'pyro_blast', name: 'Pyroschlag', cost: 2, type: 'Angriff', damage: 14, desc: 'Füge 14 Schaden zu. Erhöht sich um 2 für jeden brennenden Gegner.', color: 'border-red-600 bg-red-950/60' },
-  
-  // Cyber Cards
-  plasma_shield: { id: 'plasma_shield', name: 'Plasmaschild', cost: 1, type: 'Verteidigung', damage: 0, block: 8, desc: 'Erhalte 8 Block. Nächste Karte kostet 0.', color: 'border-cyan-700 bg-cyan-950/50' },
-  laser_beam: { id: 'laser_beam', name: 'Laserstrahl', cost: 2, type: 'Angriff', damage: 12, desc: 'Füge 12 Schaden zu. Ziehe 1 Karte.', color: 'border-cyan-600 bg-cyan-950/60' },
-  overclock: { id: 'overclock', name: 'Übertakten', cost: 0, type: 'Fähigkeit', damage: 0, block: 0, desc: 'Erhalte 2 Energie. Verliere am Ende des Zuges 3 HP.', color: 'border-emerald-700 bg-emerald-950/50' },
-  
-  // Shadow Cards
-  shadow_stab: { id: 'shadow_stab', name: 'Schattendolch', cost: 1, type: 'Angriff', damage: 8, desc: 'Füge 8 Schaden zu. Ignoriert die Hälfte des gegnerischen Blocks.', color: 'border-purple-700 bg-purple-950/50' },
-  curse_bolt: { id: 'curse_bolt', name: 'Fluchprojektil', cost: 1, type: 'Fähigkeit', damage: 0, desc: 'Gegner verursacht nächste Runde 25% weniger Schaden.', color: 'border-purple-600 bg-purple-950/60' },
-  phantom_veil: { id: 'phantom_veil', name: 'Phantomschleier', cost: 2, type: 'Verteidigung', damage: 0, block: 12, desc: 'Erhalte 12 Block. Mische eine Schatten-Kopie in den Ablagestapel.', color: 'border-indigo-700 bg-indigo-950/50' }
+  ember: { id: 'ember', name: 'Funkenflug', cost: 1, type: 'Angriff', damage: 4, burn: 3, desc: 'Füge 4 Schaden zu. Verursacht 3 Brand.', color: 'border-red-700 bg-red-950/50' },
+  pyro_blast: { id: 'pyro_blast', name: 'Pyroschlag', cost: 2, type: 'Angriff', damage: 14, desc: 'Füge 14 Schaden zu. +2 Schaden pro brennendem Gegner.', color: 'border-red-600 bg-red-950/60' }
 };
 
 export const ENEMIES = [
-  { id: 'slime', name: 'Wald-Schleim', hp: 32, maxHp: 32, type: 'Normal', intent: 'attack', intentValue: 6, desc: 'Wabbelt aggressiv.', sprite: '🧪' },
-  { id: 'goblin', name: 'Diebischer Kobold', hp: 45, maxHp: 45, type: 'Normal', intent: 'defend_attack', intentValue: 5, block: 4, desc: 'Plant einen fiesen Konter.', sprite: '👺' },
-  { id: 'wolf', name: 'Schattenwolf', hp: 58, maxHp: 58, type: 'Elite', intent: 'attack', intentValue: 12, desc: 'Knurrt hasserfüllt.', sprite: '🐺' },
-  { id: 'golem', name: 'Uralter Steingolem', hp: 120, maxHp: 120, type: 'Boss', intent: 'buff_attack', intentValue: 15, desc: 'Lädt einen vernichtenden Schlag auf.', sprite: '🗿' }
+  { id: 'slime', name: 'Wald-Schleim', hp: 32, type: 'Normal', intentValue: 6, sprite: '🧪' },
+  { id: 'goblin', name: 'Diebischer Kobold', hp: 45, type: 'Normal', intentValue: 5, sprite: '👺' },
+  { id: 'wolf', name: 'Schattenwolf', hp: 58, type: 'Elite', intentValue: 12, sprite: '🐺' },
+  { id: 'golem', name: 'Uralter Steingolem', hp: 120, type: 'Boss', intentValue: 15, sprite: '🗿' }
 ];
 
 export const MAP_NODES = [
-  { id: 1, type: 'Kampf', label: 'Einsamer Pfad', tier: 0, connectedTo: [4, 5] },
-  { id: 2, type: 'Kampf', label: 'Dunkles Dickicht', tier: 0, connectedTo: [5, 6] },
-  { id: 3, type: 'Ereignis', label: 'Mysteriöser Fuchsbau', tier: 0, connectedTo: [6] },
+  // Tier 0 (Start): 4 Normal Combats
+  { id: 1, type: 'Kampf', label: 'Vergessener Pfad', tier: 0, connectedTo: [5, 6] },
+  { id: 2, type: 'Kampf', label: 'Einsames Dickicht', tier: 0, connectedTo: [6, 7] },
+  { id: 3, type: 'Kampf', label: 'Alte Ruine', tier: 0, connectedTo: [7, 8] },
+  { id: 4, type: 'Kampf', label: 'Finsterer Fels', tier: 0, connectedTo: [8] },
   
-  { id: 4, type: 'Shop', label: 'Wandernder Händler', tier: 1, connectedTo: [7, 8] },
-  { id: 5, type: 'Elite', label: 'Revier des Schattenwolfs', tier: 1, connectedTo: [8, 9] },
-  { id: 6, type: 'Lagerfeuer', label: 'Sichere Lichtung', tier: 1, connectedTo: [9] },
+  // Tier 1: 4 Nodes
+  { id: 5, type: 'Kampf', label: 'Ruinen-Lichtung', tier: 1, connectedTo: [9, 10] },
+  { id: 6, type: 'Ereignis', label: 'Mysteriöser Schrein', tier: 1, connectedTo: [10, 11] },
+  { id: 7, type: 'Lagerfeuer', label: 'Sichere Lichtung', tier: 1, connectedTo: [11, 12] },
+  { id: 8, type: 'Kampf', label: 'Schlucht-Eingang', tier: 1, connectedTo: [12] },
   
-  { id: 7, type: 'Kampf', label: 'Ruinen-Eingang', tier: 2, connectedTo: [10] },
-  { id: 8, type: 'Lagerfeuer', label: 'Letzte Rast', tier: 2, connectedTo: [10] },
-  { id: 9, type: 'Shop', label: 'Geheimnisvoller Schrein', tier: 2, connectedTo: [10] },
+  // Tier 2: 5 Nodes
+  { id: 9, type: 'Schatztruhe', label: 'Gefundener Schatz', tier: 2, connectedTo: [13, 14] },
+  { id: 10, type: 'Elite', label: 'Revier des Schattenwolfs', tier: 2, connectedTo: [14, 15] },
+  { id: 11, type: 'Shop', label: 'Fuchshändler-Wagen', tier: 2, connectedTo: [15, 16] },
+  { id: 12, type: 'Kampf', label: 'Steinerne Brücke', tier: 2, connectedTo: [16, 17] },
+  { id: 13, type: 'Ereignis', label: 'Verlorene Erinnerung', tier: 2, connectedTo: [17] },
   
-  { id: 10, type: 'Boss', label: 'Thron des Steingolems', tier: 3, connectedTo: [] }
+  // Tier 3: 4 Nodes
+  { id: 14, type: 'Ereignis', label: 'Geheimnisvoller Fuchsbau', tier: 3, connectedTo: [18, 19] },
+  { id: 15, type: 'Lagerfeuer', label: 'Letzte Rast (Tier 3)', tier: 3, connectedTo: [19, 20] },
+  { id: 16, type: 'Kampf', label: 'Ruinen-Marktplatz', tier: 3, connectedTo: [20, 21] },
+  { id: 17, type: 'Elite', label: 'Groll der Golems', tier: 3, connectedTo: [21] },
+  
+  // Tier 4: 4 Nodes
+  { id: 18, type: 'Schatztruhe', label: 'Gefallene Beute', tier: 4, connectedTo: [22, 23] },
+  { id: 19, type: 'Shop', label: 'Uralter Schrein', tier: 4, connectedTo: [23, 24] },
+  { id: 20, type: 'Elite', label: 'Schattenwolf-Alphatier', tier: 4, connectedTo: [24] },
+  { id: 21, type: 'Kampf', label: 'Ruinen-Thron', tier: 4, connectedTo: [24] },
+  
+  // Tier 5: 3 Nodes
+  { id: 22, type: 'Lagerfeuer', label: 'Letzte Rast vor dem Boss', tier: 5, connectedTo: [25] },
+  { id: 23, type: 'Ereignis', label: 'Die große Wahl', tier: 5, connectedTo: [25] },
+  { id: 24, type: 'Elite', label: 'Steingolem-Torwächter', tier: 5, connectedTo: [25] },
+  
+  // Tier 6: 1 Boss Node
+  { id: 25, type: 'Boss', label: 'Thron des Steingolems', tier: 6, connectedTo: [] }
 ];
