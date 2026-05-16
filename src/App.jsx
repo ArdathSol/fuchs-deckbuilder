@@ -32,18 +32,17 @@ export default function App() {
   const [startBonusChoice, setStartBonusChoice] = useState({ card: null, artifact: null });
   const [bossRewardChoices, setBossRewardChoices] = useState([]);
 
-  const [audioEnabled, setAudioEnabled] = useState(false); // Aus Schutz für Ohren standardmäßig aus, Spieler muss es oben links aktivieren!
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('fox_rogue_chars_v7', JSON.stringify(characters));
   }, [characters]);
 
-  // Audio Toggle
   useEffect(() => {
-    if (audioEnabled && gameState !== 'CHAR_SELECT') startBGM();
+    if (audioEnabled) startBGM();
     else stopBGM();
-  }, [audioEnabled, gameState]);
+  }, [audioEnabled]);
 
   const toggleAudio = () => {
     setAudioEnabled(!audioEnabled);
@@ -129,9 +128,14 @@ export default function App() {
   const advanceMap = () => { setCurrentTier(prev => Math.min(9, prev + 1)); setGameState('MAP'); };
   const resetToMenu = () => { setShowAbortConfirm(false); setGameState('CHAR_SELECT'); setSelectedChar(null); };
 
-  // --- EVENT STATES (Mini API für Events, damit sie HP ändern können) ---
   const eventAPI = {
-    hurt: (amount) => setPlayerCurrentHp(p => Math.max(1, p - amount)),
+    hurt: (amount) => {
+      setPlayerCurrentHp(p => {
+        const next = Math.max(0, p - amount);
+        if (next === 0) setTimeout(() => setGameState('LOSE_SCREEN'), 500);
+        return next;
+      });
+    },
     heal: (amount) => setPlayerCurrentHp(p => Math.min(selectedChar.maxHp, p + amount)),
     spend: (amount) => setPlayerGold(p => Math.max(0, p - amount)),
     gainGold: (amount) => setPlayerGold(p => p + amount),
@@ -141,7 +145,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white selection:bg-orange-500/30 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-950 text-white selection:bg-orange-500/30 flex flex-col font-sans relative">
       
       {showAbortConfirm && (
         <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
@@ -149,22 +153,35 @@ export default function App() {
             <AlertTriangle size={40} className="mx-auto text-red-500 mb-4 animate-pulse" />
             <h3 className="text-xl font-bold mb-2">Run abbrechen?</h3>
             <div className="flex flex-col gap-3">
-              <button onClick={resetToMenu} className="py-3 bg-red-600 rounded-xl font-bold">Ja, beenden</button>
-              <button onClick={() => setShowAbortConfirm(false)} className="py-3 bg-slate-800 rounded-xl font-bold">Abbrechen</button>
+              <button type="button" onClick={resetToMenu} className="py-3 bg-red-600 rounded-xl font-bold outline-none">Ja, beenden</button>
+              <button type="button" onClick={() => setShowAbortConfirm(false)} className="py-3 bg-slate-800 rounded-xl font-bold outline-none">Abbrechen</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Startbildschirm Audio Toggle */}
+      {gameState === 'CHAR_SELECT' && (
+        <div className="absolute top-4 right-4 z-50">
+          <button type="button" onClick={toggleAudio} className="p-3 bg-slate-900 border border-slate-700 rounded-full shadow-lg outline-none hover:bg-slate-800 transition">
+            {audioEnabled ? <Volume2 size={24} className="text-amber-400" /> : <VolumeX size={24} className="text-slate-500" />}
+          </button>
+        </div>
+      )}
+
       {gameState !== 'CHAR_SELECT' && gameState !== 'WIN_SCREEN' && gameState !== 'LOSE_SCREEN' && (
-        <div className="w-full bg-slate-950/90 border-b border-slate-800 p-3 flex justify-between items-center z-40 sticky top-0">
+        <div className="w-full bg-slate-950/90 border-b border-slate-800 p-3 flex justify-between items-center z-40 sticky top-0 h-[68px]">
           <div className="flex gap-4">
             <div className="font-bold text-amber-400 flex items-center gap-1"><Heart size={16} className="text-red-500"/> {playerCurrentHp}/{selectedChar?.maxHp}</div>
             <div className="font-bold text-amber-400 flex items-center gap-1"><Coins size={16}/> {playerGold}</div>
           </div>
           <div className="flex gap-2">
-            <button onClick={toggleAudio} className="p-2 bg-slate-900 border border-slate-700 rounded-lg">{audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} className="text-slate-500" />}</button>
-            <button onClick={() => setShowAbortConfirm(true)} className="px-3 bg-red-950/50 border border-red-800 rounded-lg text-xs font-bold text-red-200">Abbrechen</button>
+            <button type="button" onClick={toggleAudio} className="p-2 bg-slate-900 border border-slate-700 rounded-lg outline-none">
+              {audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} className="text-slate-500" />}
+            </button>
+            <button type="button" onClick={() => setShowAbortConfirm(true)} className="px-3 bg-red-950/50 border border-red-800 rounded-lg text-xs font-bold text-red-200 outline-none">
+              Abbrechen
+            </button>
           </div>
         </div>
       )}
@@ -177,11 +194,11 @@ export default function App() {
             <Sparkles size={48} className="text-cyan-400 mx-auto mb-6 animate-pulse" />
             <h2 className="text-3xl font-black mb-8">Segen des Fuchses</h2>
             <div className="flex flex-col sm:flex-row gap-6 max-w-2xl mx-auto">
-              <button onClick={() => claimStartBonus('card')} className="flex-1 border-2 border-slate-700 bg-slate-900 p-6 rounded-xl text-left hover:border-cyan-500">
+              <button type="button" onClick={() => claimStartBonus('card')} className="flex-1 border-2 border-slate-700 bg-slate-900 p-6 rounded-xl text-left hover:border-cyan-500 outline-none">
                 <div className="text-xs text-cyan-400 font-bold mb-3">Option 1: Karte</div>
                 <div className="font-bold text-lg">{startBonusChoice.card?.name}</div>
               </button>
-              <button onClick={() => claimStartBonus('artifact')} className="flex-1 border-2 border-slate-700 bg-slate-900 p-6 rounded-xl text-left hover:border-amber-500">
+              <button type="button" onClick={() => claimStartBonus('artifact')} className="flex-1 border-2 border-slate-700 bg-slate-900 p-6 rounded-xl text-left hover:border-amber-500 outline-none">
                 <div className="text-xs text-amber-400 font-bold mb-3">Option 2: Artefakt</div>
                 <div className="font-bold text-lg"><Package size={18} className="inline mr-2"/>{startBonusChoice.artifact?.name}</div>
               </button>
@@ -195,7 +212,7 @@ export default function App() {
             <h2 className="text-3xl font-black text-amber-400 mb-8">Boss bezwungen! Wähle dein Relikt:</h2>
             <div className="flex flex-col gap-4 max-w-lg mx-auto mb-8">
               {bossRewardChoices.map((artifact, i) => (
-                <button key={i} onClick={() => { setPlayerArtifacts(p => [...p, artifact.id]); setCurrentAct(p => p + 1); setCurrentTier(0); setVisitedNodes([]); setGameState('MAP'); }} className="border-2 border-slate-700 bg-slate-900 p-5 rounded-xl text-left hover:border-amber-500">
+                <button type="button" key={i} onClick={() => { setPlayerArtifacts(p => [...p, artifact.id]); setCurrentAct(p => p + 1); setCurrentTier(0); setVisitedNodes([]); setGameState('MAP'); }} className="border-2 border-slate-700 bg-slate-900 p-5 rounded-xl text-left hover:border-amber-500 outline-none">
                   <div className="font-bold text-amber-400 text-lg">{artifact.name}</div><div className="text-sm text-slate-300">{artifact.desc}</div>
                 </button>
               ))}
@@ -204,7 +221,7 @@ export default function App() {
         )}
 
         {gameState === 'MAP' && <GameMap currentTier={currentTier} currentAct={currentAct} visitedNodes={visitedNodes} onSelectNode={handleSelectNode} character={selectedChar} playerArtifacts={playerArtifacts} />}
-        {gameState === 'COMBAT' && <CombatScreen character={{...selectedChar, currentHp: playerCurrentHp, maxHp: selectedChar.maxHp, startingDeck: playerDeck}} enemy={currentEnemy} playerArtifacts={playerArtifacts} onCombatWin={handleCombatWin} onCombatLose={() => setGameState('LOSE_SCREEN')} />}
+        {gameState === 'COMBAT' && <CombatScreen character={{...selectedChar, currentHp: playerCurrentHp, maxHp: selectedChar.maxHp, startingDeck: playerDeck}} enemy={currentEnemy} playerArtifacts={playerArtifacts} onCombatWin={handleCombatWin} onCombatLose={() => setGameState('LOSE_SCREEN')} playSound={playSound} />}
 
         {gameState === 'EVENT' && activeEvent && (
           <div className="p-4 flex flex-col items-center mt-10">
@@ -213,14 +230,13 @@ export default function App() {
               <p className="text-slate-300 mb-8">{activeEvent.text}</p>
               <div className="flex flex-col gap-3">
                 {activeEvent.options.map((opt, idx) => (
-                  <button key={idx} onClick={() => { opt.action(eventAPI); if(audioEnabled) playClick(); advanceMap(); }} className="p-4 bg-slate-950 border border-slate-700 rounded-xl text-left hover:border-purple-500">{opt.text}</button>
+                  <button type="button" key={idx} onClick={() => { opt.action(eventAPI); if(audioEnabled) playClick(); advanceMap(); }} className="p-4 bg-slate-950 border border-slate-700 rounded-xl text-left hover:border-purple-500 outline-none">{opt.text}</button>
                 ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* ... REWARD, SHOP, WIN und LOSE SCREENS analog (Code abgekürzt zur Übersichtlichkeit, Logik wie zuvor, nutzt advanceMap) */}
         {gameState === 'REWARD' && (
           <div className="p-4 text-center mt-20">
             <h2 className="text-2xl font-black text-amber-400 mb-6">Sieg! Wähle eine Karte:</h2>
@@ -228,12 +244,14 @@ export default function App() {
               {[...Array(3)].map((_, i) => {
                 const k = Object.keys(CARDS);
                 const c = CARDS[k[Math.floor(Math.random()*k.length)]];
-                return <button key={i} onClick={() => claimCardReward(c)} className="border border-slate-700 bg-slate-900 p-4 rounded-xl text-left font-bold text-amber-400">{c.name}</button>;
+                return <button type="button" key={i} onClick={() => { claimCardReward(c); if(audioEnabled) playClick(); }} className="border border-slate-700 bg-slate-900 p-4 rounded-xl text-left font-bold text-amber-400 outline-none">{c.name}</button>;
               })}
             </div>
-            <button onClick={() => claimCardReward(null)} className="py-3 px-6 bg-slate-800 rounded-xl font-bold">Überspringen</button>
+            <button type="button" onClick={() => claimCardReward(null)} className="py-3 px-6 bg-slate-800 rounded-xl font-bold outline-none">Überspringen</button>
           </div>
         )}
+
+        {/* ... SHOP und LAGERFEUER Logik unverändert */}
       </div>
     </div>
   );
