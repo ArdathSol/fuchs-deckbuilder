@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CARDS } from '../data/gameData';
 import { playClick, playHit } from '../utils/audio';
 
-export default function CombatScreen({ character, enemy, onCombatWin, onCombatLose, playerArtifacts, playSound }) {
+export default function CombatScreen({ character, enemy, onCombatWin, onCombatLose, playerArtifacts }) {
   const [playerHp, setPlayerHp] = useState(character.currentHp);
   const [playerBlock, setPlayerBlock] = useState(0);
   
@@ -22,7 +22,6 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
   const [foxAnimate, setFoxAnimate] = useState('');
   const [enemyAnimate, setEnemyAnimate] = useState('');
 
-  // Dynamischer Hintergrund basierend auf dem aktuellen Akt
   const getBgStyle = (act) => {
     switch (act) {
       case 1: return 'bg-gradient-to-b from-emerald-950 to-slate-950';
@@ -35,8 +34,7 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
   useEffect(() => {
     if (playerArtifacts?.includes('boss_dragon_scale')) setPlayerBlock(12);
 
-    // Deck sicher laden (egal ob IDs oder fertige Objekte übergeben werden)
-    const fullDeck = character.startingDeck.map((card, index) => {
+    const fullDeck = (character.startingDeck || []).map((card, index) => {
       const cardObj = typeof card === 'string' ? CARDS[card] : card;
       return { ...cardObj, uniqId: `battle-${index}-${Date.now()}` };
     });
@@ -50,7 +48,7 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
   }, [character, enemy, playerArtifacts]);
 
   const startPlayerTurn = (currentDiscard, currentDeck) => {
-    if (playerHp <= 0) return; // Keine Züge, falls bereits besiegt
+    if (playerHp <= 0) return;
 
     setPlayerEnergy(baseEnergy);
     setPlayerBlock(0);
@@ -101,13 +99,12 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
         const nextHp = Math.max(0, prev - dmgAfterBlock);
         if (nextHp <= 0) {
           setTimeout(() => onCombatLose(), 600);
-          return 0; // Garantierter Stop bei 0 HP
+          return 0;
         }
         return nextHp;
       });
     }
 
-    // Gegner-Runde abschließen, nur wenn Spieler überlebt
     setTimeout(() => {
       setPlayerHp(current => {
         if (current > 0) startPlayerTurn(nextDiscard, deck);
@@ -149,13 +146,11 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
   return (
     <div className={`h-[calc(100dvh-68px)] flex flex-col justify-between overflow-hidden text-white ${getBgStyle(enemy.act)}`}>
       
-      {/* Kopfbereich */}
       <div className="flex justify-between p-3 bg-slate-950/50 border-b border-slate-800 shadow-md shrink-0">
         <h2 className="font-bold text-red-400">{enemy.name} (HP: {enemyHp}/{enemy.maxHp})</h2>
         <div className="text-amber-400 font-bold">🦊 HP: {playerHp}/{character.maxHp}</div>
       </div>
       
-      {/* Schlachtfeld */}
       <div className="flex-1 grid grid-cols-2 gap-4 items-center justify-items-center">
         <div className={`text-6xl sm:text-7xl animate-bounce-slow rounded-full p-4 ${foxAnimate}`}>
           🦊
@@ -168,7 +163,6 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
         </div>
       </div>
 
-      {/* Kontrollbereich am unteren Rand */}
       <div className="shrink-0 bg-slate-950/80 border-t border-slate-800 pb-2">
         <div className="flex justify-between items-center p-3">
           <div className="w-12 h-12 bg-cyan-900 border-2 border-cyan-400 rounded-full flex items-center justify-center font-bold text-xl shadow-[0_0_10px_cyan]">
@@ -179,7 +173,6 @@ export default function CombatScreen({ character, enemy, onCombatWin, onCombatLo
           </button>
         </div>
         
-        {/* Karten-Hand Container mit festem Padding für Sichtbarkeit */}
         <div className="flex gap-2 overflow-x-auto px-3 pb-4 min-h-[140px]">
           {hand.map((card, idx) => {
              const canPlay = playerEnergy >= card.cost;
